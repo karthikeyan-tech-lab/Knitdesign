@@ -38,6 +38,10 @@ Set `CHROMIUM_PATH` if Chromium is elsewhere. The test uses Playwright from the 
 
 Deploy the contents of `dist/` to an HTTPS static host. No build command or API key is required; publish directory is `dist`. Relative URLs support deployment under a subdirectory. Serve `sw.js` with revalidation (`Cache-Control: no-cache`), JavaScript MIME type, and no redirect to a login HTML page.
 
+### Vercel
+
+The root `vercel.json` configures this as a static site and serves `dist/`. Import `karthikeyan-tech-lab/Knitdesign`, use repository root as the Root Directory (leave it empty), and select `main` as the production branch. No framework, install command, or build command is required. Keep existing access protection settings. Redeploy after applying this configuration. Under Settings → Domains, verify `knitdesign.vercel.app` belongs to this project and points to its production deployment. A Vercel 404 can also mean the domain has no active deployment; that requires checking the project, beyond the files in this repository.
+
 Choose access before deploying: public static hosting (such as GitHub Pages) makes the app available to visitors; private hosting needs an authentication gateway/access controls configured by the host. This source has no sign-in or server-side authorization. Offline cached copies remain usable on a device after online access is revoked. For confidential designs, use trusted devices and an appropriate private-host policy. No deployment or changes to the existing private site have been made.
 
 The fabric views are approximate illustrations, not physical simulation or verified machine instructions. Cam grouping compares complete needle sequences; it does not certify knitting safety or machine compatibility.
