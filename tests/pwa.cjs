@@ -21,6 +21,22 @@ const artifacts=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'knit-pwa-t
  const grouping=await page.evaluate(()=>trackGroups([['K','T','K'],['K','M','K']]));assert.deepEqual(grouping.map,[0,1,0]);assert.equal(grouping.signatures.length,2);
  await page.locator('#grid button[data-r="0"][data-n="0"]').focus();await page.keyboard.press('t');assert.equal(await page.evaluate(()=>pattern[0][0]),'T');await page.keyboard.press('ArrowRight');assert.equal(await page.locator(':focus').getAttribute('data-n'),'1');
  for(const mode of ['swatch','fabric','loops']){await page.locator('#'+mode).click();await page.evaluate(async()=>{await new Promise(requestAnimationFrame);await previewReady()});assert(await page.evaluate(()=>ctx.getImageData(400,300,1,1).data[3]===255))}
+ const canvasImage=()=>page.evaluate(async()=>{await new Promise(requestAnimationFrame);await previewReady();return {fabric:cv.toDataURL(),garment:document.getElementById('garmentView').toDataURL()}});
+ await page.locator('#swatch').click();const prior=await canvasImage();await page.locator('[data-brush="M"]').click();await page.locator('#fill').click();const changed=await canvasImage();assert.notEqual(changed.fabric,prior.fabric);assert.notEqual(changed.garment,prior.garment);
+ await page.locator('#garmentType').selectOption('sweater');const sweater=await canvasImage();assert.notEqual(sweater.garment,changed.garment);
+ await page.locator('#garmentSide').selectOption('back');const back=await canvasImage();assert.notEqual(back.garment,sweater.garment);
+ const garmentDownload=page.waitForEvent('download');await page.locator('#exportGarment').click();assert.equal((await garmentDownload).suggestedFilename(),'knit-garment.png');
+ assert.equal(await page.getByRole('heading',{name:'Follow one feeder'}).count(),0);assert.equal(await page.locator('#stats').count(),0);
+ const latestMatches=await page.evaluate(async()=>{
+  for(let i=0;i<15;i++){pattern[0][0]=['K','T','M'][(i+1)%3];drawNow()}
+  await previewReady();
+  const expected=document.createElement('canvas');expected.width=1080;expected.height=720;
+  renderGarment(expected.getContext('2d'),{pattern,yarns:$('colours').value==='two'?yarns:null,color:$('color').value,thickness:+$('thick').value,spacing:+$('space').value,garmentType:$('garmentType').value,garmentSide:$('garmentSide').value});
+  // Worker and DOM canvases may antialias garment edges differently. Compare the textured torso.
+  const a=expected.getContext('2d').getImageData(440,280,200,250).data,b=$('garmentView').getContext('2d').getImageData(440,280,200,250).data;
+  let different=0;for(let i=0;i<a.length;i+=4)if([0,1,2].some(n=>Math.abs(a[i+n]-b[i+n])>8))different++;
+  return different/(200*250)<.01;
+ });assert(latestMatches,'Latest queued design must reach garment preview');
  const downloadPromise=page.waitForEvent('download');await page.locator('#export').click();const png=await downloadPromise;assert.equal(png.suggestedFilename(),'knit-preview.png');
  const jsonDownload=page.waitForEvent('download');await page.locator('#save').click();const saved=await jsonDownload;await saved.saveAs(path.join(artifacts,'roundtrip.json'));const expected=await page.evaluate(()=>JSON.stringify(data()));await page.locator('#new').click();await page.locator('#load').setInputFiles(path.join(artifacts,'roundtrip.json'));await page.waitForFunction(text=>JSON.stringify(data())===text,expected);
  await page.evaluate(()=>flushSave());await context.setOffline(true);await page.reload();await page.evaluate(async()=>{await new Promise(requestAnimationFrame);await previewReady()});assert.equal(await page.evaluate(()=>JSON.stringify(data())),expected);assert.match(await page.locator('#networkStatus').textContent(),/Offline/);
@@ -31,8 +47,17 @@ const artifacts=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'knit-pwa-t
  const fallbackContext=await browser.newContext();await fallbackContext.addInitScript(()=>{window.OffscreenCanvas=undefined});const fallback=await fallbackContext.newPage();fallback.on('pageerror',e=>errors.push(e.message));await fallback.goto('http://127.0.0.1:8000');await fallback.evaluate(async()=>{await new Promise(requestAnimationFrame);await previewReady()});assert(await fallback.evaluate(()=>ctx.getImageData(400,300,1,1).data[3]===255));
  await fallback.addInitScript(()=>{localStorage.setItem('knit-custom-v3','broken JSON')});await fallback.reload();await fallback.waitForTimeout(400);assert.equal(await fallback.evaluate(()=>localStorage.getItem('knit-custom-v3')),'broken JSON');
  await fallback.locator('#needles').fill('6');await fallback.locator('#applySize').click();fallback.once('dialog',dialog=>dialog.dismiss());await fallback.locator('#needles').fill('2');await fallback.locator('#applySize').click();assert.equal(await fallback.evaluate(()=>pattern[0].length),6);fallback.once('dialog',dialog=>dialog.accept());await fallback.locator('#applySize').click();assert.equal(await fallback.evaluate(()=>pattern[0].length),2);await fallback.locator('#undo').click();assert.equal(await fallback.evaluate(()=>pattern[0].length),6);
- await fallback.locator('#play').click();await fallback.waitForTimeout(1200);assert.equal(await fallback.locator('#step').inputValue(),'2');await fallback.locator('#play').click();
  await fallbackContext.close();
- assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['manifest and PNG icons','service worker control','JSON example import','painting and Undo','complete-sequence track grouping','keyboard editing and navigation','three calculated canvas views','PNG export','JSON save/load roundtrip','offline reload and autosave recovery','mobile width','main-thread fallback','corrupt autosave preservation','resize confirmation and Undo','playback'],performanceResults},null,2));
+ for(const failure of ['constructor','silent','runtime']){
+  const failureContext=await browser.newContext();
+  if(failure==='constructor')await failureContext.addInitScript(()=>{window.Worker=class{constructor(){throw Error('Worker blocked')}}});
+  if(failure==='silent')await failureContext.addInitScript(()=>{window.Worker=class{postMessage(){}terminate(){}}});
+  if(failure==='runtime')await failureContext.route('**/render-worker.js',route=>route.fulfill({contentType:'application/javascript',body:'throw Error("Canvas unavailable")'}));
+  const broken=await failureContext.newPage();await broken.goto('http://127.0.0.1:8000');await broken.waitForFunction(()=>document.getElementById('previewStatus').textContent.includes('compatibility'),null,{timeout:12000});
+  assert(await broken.evaluate(()=>{const pixels=ctx.getImageData(80,140,250,250).data;return new Set(pixels).size>15}));
+  const old=await broken.locator('#garmentView').evaluate(c=>c.toDataURL());await broken.locator('[data-brush="M"]').click();await broken.locator('#fill').click();await broken.evaluate(async()=>{await new Promise(requestAnimationFrame);await previewReady()});assert.notEqual(await broken.locator('#garmentView').evaluate(c=>c.toDataURL()),old);
+  await failureContext.close();
+ }
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['manifest and PNG icons','service worker control','JSON example import','painting and Undo','complete-sequence track grouping','keyboard editing and navigation','three calculated canvas views','PNG export','JSON save/load roundtrip','offline reload and autosave recovery','mobile width','main-thread fallback','corrupt autosave preservation','resize confirmation and Undo','live garment texture changes','garment shape and back view','garment PNG export','circled panels removed','worker constructor failure recovery','silent worker timeout recovery','worker runtime failure recovery','latest queued design matches garment'],performanceResults},null,2));
  await browser.close();
 })().catch(error=>{console.error(error);process.exit(1)});

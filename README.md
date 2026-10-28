@@ -1,6 +1,6 @@
 # Knit Loop Studio PWA
 
-An installable, offline knit design editor based on the supplied V1.3 source. Paint Knit / Tuck / Miss repeats, group needle action sequences into cam tracks, and inspect calculated fabric, yarn-detail and loop views.
+An installable, offline knit design editor with live garment previews, based on the supplied V1.3 source. Paint Knit / Tuck / Miss repeats, group needle action sequences into cam tracks, and inspect calculated fabric, yarn-detail and loop views.
 
 ## Run
 
@@ -17,12 +17,12 @@ After the first successful online load, the app works offline. Designs autosave 
 ## Architecture
 
 - `dist/app.js`: state, editor, validation, cam grouping and debounced persistence.
-- `dist/renderer.js`: original procedural Canvas fabric and loop geometry, with lazy face textures.
-- `dist/preview.js` and `dist/render-worker.js`: worker rendering with one active render and one latest pending state; synchronous fallback on unsupported browsers. No static fabric images replace computed previews.
+- `dist/renderer.js`: procedural Canvas fabric and loop geometry, tiled repeat textures shared by fabric and garment previews. T-shirt and crewneck sweater illustrations update with stitches, yarn colours, thickness and spacing; front/back views and garment PNG export are available.
+- `dist/preview.js` and `dist/render-worker.js`: worker rendering with one active render and one latest pending state; synchronous fallback on unsupported browsers, worker startup/runtime failures and five-second timeouts. No static fabric images replace computed previews.
 - `dist/manifest.webmanifest`, `dist/sw.js`, `dist/pwa.js`: installation, versioned offline shell, network status and explicit update activation. Bump the cache version in `sw.js` for each release. Update saves the current design before reloading.
 - `SOURCE_README.md`, `TECHNICAL_NOTES.md`, `CODEX_HANDOFF.md`, `SOURCE_MANIFEST.json`: original archive context. The source manifest hashes refer to the imported V1.3 files, not the modified PWA.
 
-UI updates use animation frames; pointer motion no longer rebuilds statistics; autosave waits 250 ms and flushes when the page hides. Canvas exports wait for the latest rendering job. Browsers without worker Canvas support keep the calculated renderer but may pause during expensive rendering.
+UI updates use animation frames; pointer motion no longer rebuilds statistics; autosave waits 250 ms and flushes when the page hides. Canvas exports wait for the latest rendering job. Browsers without worker Canvas support keep the calculated renderer but may pause during expensive rendering. Fabric textures draw one repeat then tile it; pointer updates reuse textures, and garment renders run only when their inputs change. Loop detail shows up to 48 feeder passes. The previous feeder playback and statistics panels were replaced by the garment preview.
 
 ## Validate
 
@@ -33,6 +33,8 @@ node tests/pwa.cjs
 ```
 
 Set `CHROMIUM_PATH` if Chromium is elsewhere. The test uses Playwright from the development environment; it is not an application runtime dependency. See [VALIDATION.md](VALIDATION.md) for measurements and coverage.
+
+For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V1.5 is shown in the header. This activates the new offline cache without clearing saved designs.
 
 ## Deploy and access
 

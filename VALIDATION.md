@@ -15,3 +15,14 @@ Worker rendering primarily removes work from the UI thread; it does not eliminat
 Browser tests cover service-worker control and offline reload, PNG icon sizes and manifest, example JSON import, K/T/M painting, Undo, keyboard navigation, complete-sequence track grouping, all three rendered views, PNG export, JSON download/reimport, autosave recovery, no page errors, and mobile document width. Additional checks cover synchronous renderer fallback, corrupt browser-storage preservation, shrink confirmation/Undo and playback.
 
 Not validated: native installation on iOS/Android, private hosting gateways, a deployed HTTPS origin, and speed on physical mobile devices. No public site has been deployed.
+
+
+## V1.5 garment and renderer repair
+
+Replaced the feeder playback/statistics panels with a stitch-textured T-shirt or sweater illustration, with front/back selection and PNG export. Kept the never-knit warning near the garment, and feeder highlighting in the loop controls.
+
+The old preview bridge had an unguarded Worker constructor and no timeout. Tests now simulate a constructor exception, worker runtime failure, and a worker that never replies. Each recovers to calculated Canvas output; tests verify nonuniform image pixels and subsequent garment updates. These reproduce failure classes, not a diagnosis captured on the user's actual phone.
+
+The renderer draws a single repeat and tiles it across fabric and garment views, with a shared per-face cache. At the same tested repeat sizes and K/T/M/mixed patterns, local Chromium measured 36–51 ms for 6 × 4 previews and 108–194 ms for 24 × 32 previews, including the garment. UI updates measured 5–69 ms. Previous PWA preview completion was 140–905 ms without a garment. These are machine-specific observations, not physical-device performance guarantees.
+
+22 browser checks passed, including garment texture changes after editing, garment shape/back switching, garment PNG export, removal of old panels, all worker failure recovery paths, latest queued design matching the garment texture, offline reload and saved-design recovery. Both worker and main-thread fallback still draw the procedural stitch model. No actual Android/iOS device or live Vercel deployment was verified. Offline shell cache bumped from v2 to v3; users with the older copy must accept the update.
