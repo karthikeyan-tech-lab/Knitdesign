@@ -54,14 +54,24 @@ function makeTexture(o,back){
  c.width=dx*o.pattern[0].length;c.height=Math.ceil(dy*o.pattern.length);
  let g=c.getContext('2d'),cols=o.pattern[0].length+2,rows=o.pattern.length+5;
  const yarn=r=>o.yarns?o.yarns[((r%o.pattern.length)+o.pattern.length)%o.pattern.length]:o.color;
- g.fillStyle=mix(o.color,-.68);g.fillRect(0,0,c.width,c.height);
- function line(p,col,width,front=true){g.lineCap='round';g.lineJoin='round';g.strokeStyle=mix(col,-.58);g.lineWidth=width+1.8;g.stroke(p);g.strokeStyle=mix(col,-.12);g.lineWidth=width;g.stroke(p);g.save();g.translate(-.45,-.65);g.strokeStyle=mix(col,.22);g.lineWidth=width*.48;g.stroke(p);g.translate(0,-.25);g.strokeStyle=mix(col,.4);g.lineWidth=width*.12;g.stroke(p);g.restore()}
+ g.fillStyle=mix(yarn(0),-.58);g.fillRect(0,0,c.width,c.height);
+ function line(p,col,width){
+  g.lineCap='round';g.lineJoin='round';
+  // Broad contact shadow, matte yarn body, then soft directional highlights.
+  g.strokeStyle=mix(col,-.62);g.lineWidth=width+1.45;g.stroke(p);
+  g.strokeStyle=mix(col,-.2);g.lineWidth=width;g.stroke(p);
+  g.save();g.translate(-.35,-.4);g.strokeStyle=mix(col,.08);g.lineWidth=width*.69;g.stroke(p);
+  g.translate(-.18,-.18);g.strokeStyle=mix(col,.24);g.lineWidth=width*.24;g.stroke(p);
+  // Short, fine dashes suggest spun fibers; geometry remains stitch-derived.
+  g.setLineDash([.65,1.9]);g.lineDashOffset=width*.7;g.strokeStyle=mix(col,.35);g.lineWidth=.25;g.stroke(p);
+  g.restore();
+ }
  const radius=2.5+o.thickness*.22;
  for(let r=-2;r<rows;r++){
  let actual=((r%o.pattern.length)+o.pattern.length)%o.pattern.length,col=yarn(r);
  for(let n=-1;n<cols;n++){
  let a=o.pattern[actual][((n%o.pattern[0].length)+o.pattern[0].length)%o.pattern[0].length],next=1;while(next<=o.pattern.length&&o.pattern[(actual+next)%o.pattern.length][((n%o.pattern[0].length)+o.pattern[0].length)%o.pattern[0].length]!=='K')next++;
- let jitter=Math.sin(n*31.77+r*16.3)*.19,x=n*dx+jitter,y=r*dy+jitter,p=new Path2D();
+ let jitter=Math.sin(((n%o.pattern[0].length+o.pattern[0].length)%o.pattern[0].length)*31.77+actual*16.3)*.12,x=n*dx+jitter,y=r*dy+jitter,p=new Path2D();
  if(back){
   if(a==='M')continue;
   // Back stitch view: purl crown and connecting sinker arc, not mirrored face Vs.
@@ -104,7 +114,7 @@ window.renderFabricSheet=function(ctx,o){
  let colours=o.yarns?o.yarns.slice(0,o.pattern.length):[o.color];[...new Set(colours)].forEach((col,j)=>{ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(x+11+j*30,88,10,7,-.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#0003';ctx.lineWidth=1;ctx.stroke()});
  ctx.save();zig(ctx,x+3,y+4,w,h);ctx.shadowColor='#0004';ctx.shadowBlur=7;ctx.shadowOffsetY=4;ctx.fillStyle='#d6d9d1';ctx.fill();ctx.restore();
  ctx.save();zig(ctx,x,y,w,h);ctx.clip();
- let srcW=Math.min(tex.width,tex.width/o.zoom),srcH=srcW*h/w;
+ let srcW=Math.min(tex.width,tex.width/o.zoom,tex.height*w/h),srcH=srcW*h/w;
  ctx.drawImage(tex,0,0,srcW,Math.min(srcH,tex.height),x,y,w,h);
  let sheen=ctx.createLinearGradient(x,y,x+w,y+h);sheen.addColorStop(0,'#ffffff0c');sheen.addColorStop(.55,'#00000000');sheen.addColorStop(1,'#00000020');ctx.fillStyle=sheen;ctx.fillRect(x,y,w,h);ctx.restore();
  // Magnifier samples the same calculated texture. Pointer changes the sample region.

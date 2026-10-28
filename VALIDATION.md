@@ -26,3 +26,8 @@ The old preview bridge had an unguarded Worker constructor and no timeout. Tests
 The renderer draws a single repeat and tiles it across fabric and garment views, with a shared per-face cache. At the same tested repeat sizes and K/T/M/mixed patterns, local Chromium measured 36–51 ms for 6 × 4 previews and 108–194 ms for 24 × 32 previews, including the garment. UI updates measured 5–69 ms. Previous PWA preview completion was 140–905 ms without a garment. These are machine-specific observations, not physical-device performance guarantees.
 
 22 browser checks passed, including garment texture changes after editing, garment shape/back switching, garment PNG export, removal of old panels, all worker failure recovery paths, latest queued design matching the garment texture, offline reload and saved-design recovery. Both worker and main-thread fallback still draw the procedural stitch model. No actual Android/iOS device or live Vercel deployment was verified. Offline shell cache bumped from v2 to v3; users with the older copy must accept the update.
+
+
+## V1.6 full-repeat navigation and appearance
+
+Existing 22 PWA/rendering checks passed after the changes. A separate mobile-emulation test at 390 × 844 verifies 12-feeder × 8-needle and 32-feeder × 24-needle repeats: fit has no horizontal/vertical inner overflow, expanded view opens/closes, both scroll axes move in large-cell mode, Move does not paint, and the bottom-right cell can be painted. Tests use Chromium touch/mobile emulation, not a physical phone. The full editor hides unrelated controls. The shell cache is v4. Appearance improvements are documented in RESEARCH.md; no physical fabric accuracy claim is made.

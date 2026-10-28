@@ -34,7 +34,7 @@ node tests/pwa.cjs
 
 Set `CHROMIUM_PATH` if Chromium is elsewhere. The test uses Playwright from the development environment; it is not an application runtime dependency. See [VALIDATION.md](VALIDATION.md) for measurements and coverage.
 
-For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V1.5 is shown in the header. This activates the new offline cache without clearing saved designs.
+For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V1.6 is shown in the header. This activates the new offline cache without clearing saved designs.
 
 ## Deploy and access
 
@@ -47,3 +47,10 @@ The root `vercel.json` configures this as a static site and serves `dist/`. Impo
 Choose access before deploying: public static hosting (such as GitHub Pages) makes the app available to visitors; private hosting needs an authentication gateway/access controls configured by the host. This source has no sign-in or server-side authorization. Offline cached copies remain usable on a device after online access is revoked. For confidential designs, use trusted devices and an appropriate private-host policy. No deployment or changes to the existing private site have been made.
 
 The fabric views are approximate illustrations, not physical simulation or verified machine instructions. Cam grouping compares complete needle sequences; it does not certify knitting safety or machine compatibility.
+
+
+## Full repeat editor (V1.6)
+
+**Fit repeat** starts enabled: all feeders and needles are visible without an inner scroll box. Choose **Full design** to open a focused editor, hiding unrelated controls. **Move** enables touch swiping or mouse dragging without changing stitches. Disable Fit repeat for larger cells, then use Move or the four arrow buttons to reach other cells. Choose **Paint** to resume editing. Escape or Close full design returns to the studio. Compact cells prioritize seeing the whole repeat; use larger cells for precise touch edits.
+
+Run `node tests/editor.cjs` alongside the existing PWA suite to verify mobile 12×8 and 32×24 repeats. See [RESEARCH.md](RESEARCH.md) for references, appearance improvements and limits.
