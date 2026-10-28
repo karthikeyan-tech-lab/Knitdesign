@@ -34,7 +34,7 @@ node tests/pwa.cjs
 
 Set `CHROMIUM_PATH` if Chromium is elsewhere. The test uses Playwright from the development environment; it is not an application runtime dependency. See [VALIDATION.md](VALIDATION.md) for measurements and coverage.
 
-For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V1.6 is shown in the header. This activates the new offline cache without clearing saved designs.
+For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V1.7 is shown in the header. This activates the new offline cache without clearing saved designs.
 
 ## Deploy and access
 
@@ -54,3 +54,5 @@ The fabric views are approximate illustrations, not physical simulation or verif
 **Fit repeat** starts enabled: all feeders and needles are visible without an inner scroll box. Choose **Full design** to open a focused editor, hiding unrelated controls. **Move** enables touch swiping or mouse dragging without changing stitches. Disable Fit repeat for larger cells, then use Move or the four arrow buttons to reach other cells. Choose **Paint** to resume editing. Escape or Close full design returns to the studio. Compact cells prioritize seeing the whole repeat; use larger cells for precise touch edits.
 
 Run `node tests/editor.cjs` alongside the existing PWA suite to verify mobile 12×8 and 32×24 repeats. See [RESEARCH.md](RESEARCH.md) for references, appearance improvements and limits.
+
+V1.7 refines the face-loop legs, back crowns and curved yarn strand detail using the supplied visual reference. It keeps your stitch design and yarn settings unchanged.

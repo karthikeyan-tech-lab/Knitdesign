@@ -31,3 +31,8 @@ The renderer draws a single repeat and tiles it across fabric and garment views,
 ## V1.6 full-repeat navigation and appearance
 
 Existing 22 PWA/rendering checks passed after the changes. A separate mobile-emulation test at 390 × 844 verifies 12-feeder × 8-needle and 32-feeder × 24-needle repeats: fit has no horizontal/vertical inner overflow, expanded view opens/closes, both scroll axes move in large-cell mode, Move does not paint, and the bottom-right cell can be painted. Tests use Chromium touch/mobile emulation, not a physical phone. The full editor hides unrelated controls. The shell cache is v4. Appearance improvements are documented in RESEARCH.md; no physical fabric accuracy claim is made.
+
+
+## V1.7 reference study
+
+The reference image guided face-loop and back-crown appearance, with centreline-following fiber strands. Verified calculated front/back output by visual inspection and reran the 22 PWA checks. The supplied reference is not treated as a verified stitch chart or physical density measurement. Cache version is v5.

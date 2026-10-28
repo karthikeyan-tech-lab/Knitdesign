@@ -55,35 +55,45 @@ function makeTexture(o,back){
  let g=c.getContext('2d'),cols=o.pattern[0].length+2,rows=o.pattern.length+5;
  const yarn=r=>o.yarns?o.yarns[((r%o.pattern.length)+o.pattern.length)%o.pattern.length]:o.color;
  g.fillStyle=mix(yarn(0),-.58);g.fillRect(0,0,c.width,c.height);
+ // Record the same Bezier centreline used for the yarn body, so fine strands
+ // follow the loop instead of adding a flat noise/photo overlay.
+ function yarnPath(){
+  const path=new Path2D(),points=[];let last=[0,0];
+  return {path,points,moveTo(x,y){path.moveTo(x,y);last=[x,y];points.push(last)},lineTo(x,y){path.lineTo(x,y);last=[x,y];points.push(last)},bezierCurveTo(x1,y1,x2,y2,x3,y3){path.bezierCurveTo(x1,y1,x2,y2,x3,y3);const start=last;for(let i=1;i<=10;i++){const t=i/10,u=1-t;points.push([u*u*u*start[0]+3*u*u*t*x1+3*u*t*t*x2+t*t*t*x3,u*u*u*start[1]+3*u*u*t*y1+3*u*t*t*y2+t*t*t*y3])}last=[x3,y3]}};
+ }
  function line(p,col,width){
   g.lineCap='round';g.lineJoin='round';
   // Broad contact shadow, matte yarn body, then soft directional highlights.
-  g.strokeStyle=mix(col,-.62);g.lineWidth=width+1.45;g.stroke(p);
-  g.strokeStyle=mix(col,-.2);g.lineWidth=width;g.stroke(p);
-  g.save();g.translate(-.35,-.4);g.strokeStyle=mix(col,.08);g.lineWidth=width*.69;g.stroke(p);
-  g.translate(-.18,-.18);g.strokeStyle=mix(col,.24);g.lineWidth=width*.24;g.stroke(p);
+  g.strokeStyle=mix(col,-.62);g.lineWidth=width+1.45;g.stroke(p.path);
+  g.strokeStyle=mix(col,-.2);g.lineWidth=width;g.stroke(p.path);
+  g.save();g.translate(-.35,-.4);g.strokeStyle=mix(col,.08);g.lineWidth=width*.69;g.stroke(p.path);
+  g.translate(-.18,-.18);g.strokeStyle=mix(col,.24);g.lineWidth=width*.24;g.stroke(p.path);
   // Short, fine dashes suggest spun fibers; geometry remains stitch-derived.
-  g.setLineDash([.65,1.9]);g.lineDashOffset=width*.7;g.strokeStyle=mix(col,.35);g.lineWidth=.25;g.stroke(p);
+  g.setLineDash([.65,1.9]);g.lineDashOffset=width*.7;g.strokeStyle=mix(col,.35);g.lineWidth=.25;g.stroke(p.path);
   g.restore();
+  for(let strand=0;strand<2;strand++){
+   g.beginPath();p.points.forEach((v,i)=>{const before=p.points[Math.max(0,i-1)],after=p.points[Math.min(p.points.length-1,i+1)];const vx=after[0]-before[0],vy=after[1]-before[1],length=Math.hypot(vx,vy)||1,offset=Math.sin(i*.92+strand*2.8)*width*.18;const x=v[0]-vy/length*offset,y=v[1]+vx/length*offset;i?g.lineTo(x,y):g.moveTo(x,y)});
+   g.strokeStyle=strand?'#ffffff30':'#10191435';g.lineWidth=.25;g.stroke();
+  }
  }
- const radius=2.5+o.thickness*.22;
+ const radius=2.7+o.thickness*.23;
  for(let r=-2;r<rows;r++){
  let actual=((r%o.pattern.length)+o.pattern.length)%o.pattern.length,col=yarn(r);
  for(let n=-1;n<cols;n++){
  let a=o.pattern[actual][((n%o.pattern[0].length)+o.pattern[0].length)%o.pattern[0].length],next=1;while(next<=o.pattern.length&&o.pattern[(actual+next)%o.pattern.length][((n%o.pattern[0].length)+o.pattern[0].length)%o.pattern[0].length]!=='K')next++;
- let jitter=Math.sin(((n%o.pattern[0].length+o.pattern[0].length)%o.pattern[0].length)*31.77+actual*16.3)*.12,x=n*dx+jitter,y=r*dy+jitter,p=new Path2D();
+ let jitter=Math.sin(((n%o.pattern[0].length+o.pattern[0].length)%o.pattern[0].length)*31.77+actual*16.3)*.12,x=n*dx+jitter,y=r*dy+jitter,p=yarnPath();
  if(back){
   if(a==='M')continue;
   // Back stitch view: purl crown and connecting sinker arc, not mirrored face Vs.
-  p.moveTo(x-dx*.5,y+dy*.55);p.bezierCurveTo(x-dx*.27,y+dy*.65,x-dx*.27,y-dy*.3,x,y-dy*.28);p.bezierCurveTo(x+dx*.27,y-dy*.3,x+dx*.27,y+dy*.65,x+dx*.5,y+dy*.55);line(p,col,radius*.72);
-  let crown=new Path2D();crown.moveTo(x-dx*.47,y+dy*.32);crown.bezierCurveTo(x-dx*.16,y-dy*.05,x+dx*.16,y-dy*.05,x+dx*.47,y+dy*.32);line(crown,col,radius);
+  p.moveTo(x-dx*.5,y+dy*.55);p.bezierCurveTo(x-dx*.30,y+dy*.6,x-dx*.24,y-dy*.43,x,y-dy*.43);p.bezierCurveTo(x+dx*.24,y-dy*.43,x+dx*.30,y+dy*.6,x+dx*.5,y+dy*.55);line(p,col,radius*.72);
+  let crown=yarnPath();crown.moveTo(x-dx*.27,y+dy*.28);crown.bezierCurveTo(x-dx*.30,y-dy*.30,x+dx*.30,y-dy*.30,x+dx*.27,y+dy*.28);line(crown,col,radius*.85);let sinker=yarnPath();sinker.moveTo(x-dx*.5,y+dy*.52);sinker.lineTo(x+dx*.5,y+dy*.52);line(sinker,col,radius*.60);
  }else{
   if(a==='M'){p.moveTo(x-dx/2,y+dy*.55);p.lineTo(x+dx/2,y+dy*.55);line(p,col,radius*.7);continue}
   let ext=(Math.min(next,5)-1)*dy*.75,top=y-dy*.63-ext;
   if(a==='T'){
    p.moveTo(x-dx*.5,y+dy*.6);p.bezierCurveTo(x-dx*.35,y+dy*.7,x-dx*.2,top,x-dx*.12,top);p.bezierCurveTo(x-dx*.05,top-dy*.3,x+dx*.05,top-dy*.3,x+dx*.12,top);p.bezierCurveTo(x+dx*.2,top,x+dx*.35,y+dy*.7,x+dx*.5,y+dy*.6);line(p,col,radius*.84);
   }else{
-   p.moveTo(x-dx/2,y+dy*.6);p.bezierCurveTo(x-dx*.22,y+dy*.95,x+dx*.29,y-dy*.06,x+dx*.23,top);p.bezierCurveTo(x+dx*.25,top-dy*.45,x-dx*.25,top-dy*.45,x-dx*.23,top);p.bezierCurveTo(x-dx*.29,y-dy*.06,x+dx*.22,y+dy*.95,x+dx/2,y+dy*.6);line(p,col,radius);
+   p.moveTo(x-dx*.39,top);p.bezierCurveTo(x-dx*.38,y-dy*.08,x-dx*.15,y+dy*.44,x,y+dy*.64);p.bezierCurveTo(x+dx*.15,y+dy*.44,x+dx*.38,y-dy*.08,x+dx*.39,top);line(p,col,radius);
   }
  }
  // Deterministic fine fiber glints, following the legs at this viewing scale.
@@ -91,7 +101,7 @@ function makeTexture(o,back){
  }
  if(back){
   // Float spans are continuous across consecutive missed needles.
-  let start=null;for(let n=0;n<=cols;n++){let miss=n<cols&&o.pattern[actual][n%o.pattern[0].length]==='M';if(miss&&start===null)start=n;if(!miss&&start!==null){let p=new Path2D();p.moveTo((start-.5)*dx,r*dy+dy*.5);p.bezierCurveTo(start*dx,r*dy+dy*.65,n*dx,r*dy+dy*.65,(n-.5)*dx,r*dy+dy*.5);line(p,col,radius);start=null}}
+  let start=null;for(let n=0;n<=cols;n++){let miss=n<cols&&o.pattern[actual][n%o.pattern[0].length]==='M';if(miss&&start===null)start=n;if(!miss&&start!==null){let p=yarnPath();p.moveTo((start-.5)*dx,r*dy+dy*.5);p.bezierCurveTo(start*dx,r*dy+dy*.65,n*dx,r*dy+dy*.65,(n-.5)*dx,r*dy+dy*.5);line(p,col,radius);start=null}}
  }
  }
  const expanded=document.createElement('canvas');expanded.width=1000;expanded.height=1100;
