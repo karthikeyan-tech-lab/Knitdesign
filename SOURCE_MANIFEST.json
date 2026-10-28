@@ -1,0 +1,15 @@
+{
+  "version": "V1.3",
+  "source_commit": "e1276d025aff1f60e18e2bed1029694e4accf29a",
+  "original_site": "https://karthi-knit-loop-studio.wholeheron2048.chatgpt.site",
+  "files": {
+    "CODEX_HANDOFF.md": "838e2e7fb5134cdb1bb0ab3da70bcc7350d5b74f0bf2e1a509c94ccf9d9d961b",
+    "README.md": "961d158d2d4a81e90ac0d32219e8bd6f52ab739d55e26393ab5b408de28f296e",
+    "TECHNICAL_NOTES.md": "92a73eae1074b9f28e96996d8ca30bfda8a7be1fa437cfb17f76f7be5d556799",
+    "dist/app.js": "689dcd10b2425c0a02130de885b1cb381a2e3b6100cafdb1130ecf098b3a4caf",
+    "dist/index.html": "e0863ba92b839d53f89dfa8ec66413eac7faf97e1fb57039184f2c19e15168cf",
+    "dist/renderer.js": "b56cc8284897763d4f248569a16663fb723c6d362100d8068cad575dff354f88",
+    "examples/custom-six-needle.json": "20bd11c6c36cc7463fa49bcc39b258631d7f221a5f646bee6b709dcb9c12f31c",
+    "examples/two-track-tuck.json": "9882f8655bbb2b2259939c3cb8c3afce9168716425f81190546da37e7bca911b"
+  }
+}
