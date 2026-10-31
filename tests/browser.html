@@ -20,6 +20,15 @@
   check(el('jerseyStudy').checked&&el('space').disabled,'fresh browser opens measured jersey study');
   check(doc.documentElement.scrollWidth<=win.innerWidth,'390px layout has no horizontal page overflow');
   check(el('view').getContext('2d').getImageData(400,300,1,1).data[3]===255,'fabric canvas renders');
+  const meanTorso=()=>{const d=el('garmentView').getContext('2d').getImageData(450,280,180,260).data,s=[0,0,0];for(let i=0;i<d.length;i+=4)for(let c=0;c<3;c++)s[c]+=d[i+c];return s.map(v=>v/(d.length/4))};
+  input('colours','two');
+  for(const study of [false,true]){
+   el('jerseyStudy').checked=study;el('jerseyStudy').dispatchEvent(new win.Event('input',{bubbles:true}));
+   const setFeeders=colours=>doc.querySelectorAll('#feederColors input').forEach((field,i)=>{field.value=colours[i];field.dispatchEvent(new win.Event('input',{bubbles:true}))});
+   setFeeders(['#87ceeb','#ffffff']);await ready();const first=meanTorso();
+   setFeeders(['#ffffff','#87ceeb']);await ready();const second=meanTorso();
+   check(Math.max(...first.map((v,i)=>Math.abs(v-second[i])))<1,'swapped sky-blue/white colour balance: '+(study?'jersey study':'standard renderer'));
+  }
   const frontBoth=el('view').toDataURL();input('side','back');await ready();check(el('view').toDataURL()!==frontBoth,'front/back selection updates the image');
   input('side','both');input('zoom','1.5');await ready();check(el('view').toDataURL()!==frontBoth,'zoom updates the image');click('fit');await ready();
   doc.querySelector('[data-brush="T"]').click();paint(0,0);await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('T')&&el('jerseyMessage').textContent.includes('paused')&&!el('space').disabled,'tuck painting pauses jersey study without losing design');

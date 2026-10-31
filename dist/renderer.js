@@ -55,7 +55,11 @@ function makeTexture(o,back){
  c.width=dx*o.pattern[0].length;c.height=Math.ceil(dy*o.pattern.length);
  let g=c.getContext('2d'),cols=o.pattern[0].length+2,rows=o.pattern.length+5;
  const yarn=r=>o.yarns?o.yarns[((r%o.pattern.length)+o.pattern.length)%o.pattern.length]:o.color;
- g.fillStyle=mix(yarn(0),-.58);g.fillRect(0,0,c.width,c.height);
+ // Underlay is independent of the repeat's starting feeder.
+ const activeColours=o.yarns?o.yarns.slice(0,o.pattern.length):[o.color];
+ const baseRGB=[0,1,2].map(i=>Math.round(activeColours.reduce((sum,col)=>sum+parseInt(col.slice(1+i*2,3+i*2),16),0)/activeColours.length));
+ const baseColour='#'+baseRGB.map(v=>v.toString(16).padStart(2,'0')).join('');
+ g.fillStyle=mix(baseColour,-.58);g.fillRect(0,0,c.width,c.height);
  // Record the same Bezier centreline used for the yarn body, so fine strands
  // follow the loop instead of adding a flat noise/photo overlay.
  function yarnPath(){
@@ -154,7 +158,7 @@ window.renderGarment=function(ctx,o){
  for(const [x,bend]of [[395,20],[680,-22]]){let fold=ctx.createLinearGradient(x-20,0,x+20,0);fold.addColorStop(0,'#0000');fold.addColorStop(.5,'#00000012');fold.addColorStop(1,'#fff0');ctx.fillStyle=fold;ctx.beginPath();ctx.moveTo(x,220);ctx.quadraticCurveTo(x+bend,420,x+15,625);ctx.lineTo(x-25,625);ctx.quadraticCurveTo(x+bend-25,420,x-12,220);ctx.fill()}
  ctx.restore();ctx.strokeStyle='#263e3866';ctx.lineWidth=2;ctx.stroke(shape);
  // Neck opening and a ribbed collar; a higher neckline distinguishes the back.
- ctx.beginPath();ctx.moveTo(426,108);ctx.bezierCurveTo(448,back?149:221,632,back?149:221,654,108);ctx.strokeStyle=o.yarns?o.yarns[0]:o.color;ctx.lineWidth=17;ctx.stroke();ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();
+ ctx.beginPath();ctx.moveTo(426,108);ctx.bezierCurveTo(448,back?149:221,632,back?149:221,654,108);ctx.strokeStyle=o.color;ctx.lineWidth=17;ctx.stroke();ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();
  ctx.beginPath();ctx.moveTo(436,110);ctx.bezierCurveTo(458,back?137:202,622,back?137:202,644,110);ctx.lineTo(436,110);ctx.fillStyle='#dfe6df';ctx.fill();
  ctx.beginPath();ctx.moveTo(377,611);ctx.quadraticCurveTo(540,633,703,611);ctx.setLineDash([4,4]);ctx.strokeStyle='#ffffff66';ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
  ctx.fillStyle='#294b3f';ctx.font='16px system-ui';ctx.fillText((longSleeve?'CREWNECK SWEATER':'KNIT T-SHIRT')+' / '+(back?'BACK':'FRONT'),35,40);

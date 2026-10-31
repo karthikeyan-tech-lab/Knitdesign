@@ -56,7 +56,8 @@
     distance+=len;
    }
   }
-  const bg=yarn(0);
+  // Treat every active feeder equally; colour order must not tint empty space.
+  const bg=[0,1,2].map(i=>Math.round(Array.from({length:o.pattern.length},(_,r)=>yarn(r)[i]).reduce((a,b)=>a+b,0)/o.pattern.length));
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
    const i=y*width+x,p=i*4;
    if(depth[i]===-100){const k=.84+(hash(x,y)-.5)*.045;pixels[p]=bg[0]*k;pixels[p+1]=bg[1]*k;pixels[p+2]=bg[2]*k;pixels[p+3]=255;continue}
