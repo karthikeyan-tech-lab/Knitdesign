@@ -1,6 +1,15 @@
 /* Periodic K/T state and geometric tuck study. No mechanical solver. */
 (function(root){
  const mod=(a,n)=>(a%n+n)%n;
+ const piqueReference=Object.freeze({name:'Single-tuck piqué',yarnCount:30,countSystem:'Ne',composition:'100% cotton',gauge:24,fabricCondition:'finished',wpi:35,cpi:50,yarnCm:27,needles:100,meanLengthMm:2.7});
+ function profileFor(p){
+  if(!valid(p)||p.length%4||p[0].length%2)return null;
+  const repeat=[['K','K'],['K','T'],['K','K'],['T','K']];
+  for(let shift=0;shift<4;shift++)for(let swap=0;swap<2;swap++)if(p.every((row,r)=>row.every((a,n)=>a===repeat[(r+shift)%4][(n+swap)%2])))return piqueReference;
+  return null;
+ }
+ function modelFor(p){const profile=profileFor(p);return profile?root.jerseyStudy.model(profile.meanLengthMm,profile):root.jerseyStudy.model()}
+ const arc=points=>points.slice(1).reduce((sum,v,i)=>sum+Math.hypot(...v.map((x,k)=>x-points[i][k])),0);
  function valid(p){return Array.isArray(p)&&p.length>0&&Array.isArray(p[0])&&p[0].length>0&&p.every(row=>row.length===p[0].length&&row.every(a=>['K','T','M'].includes(a)))}
  function supports(p){return valid(p)&&p.some(row=>row.includes('T'))&&p.every(row=>!row.includes('M'))&&p[0].every((_,n)=>p.some(row=>row[n]==='K'))}
  function event(p,r,n){
@@ -23,31 +32,42 @@
     const dx=(x-n*w)/w,dy=(y+r*h)/h,k=Math.exp(-dx*dx*2-dy*dy*1.5);sx-=dx*w*.025*k;sy-=dy*h*.025*k;
    }return [x+sx,y+sy,v[2]];
   }
-  for(let r=-layout.rows-R*2;r<R*2;r++)for(let n=-2;n<layout.cols+2;n++){
-   const e=event(p,r,n);let points;
+  function make(e,compact){let points;
    if(e.action==='K'){
-    const span=e.nextKnit-r,stretch=1+(span-1)*h/(bottom-top);
+    const span=e.nextKnit-e.r,stretch=compact+(span-1)*h/(bottom-top);
     points=m.points.map((v,i)=>{const envelope=Math.sin(Math.PI*i/(m.points.length-1))**2;
      return [v[0]*(1+envelope*(e.tucks.length*.08-Math.min(span-1,4)*.08)),bottom+(v[1]-bottom)*stretch,v[2]];
     });
    }else{
     // The feeder deposits a tuck bight while the old knit remains held.
     // It joins the same course endpoints as adjacent K cells.
-    const z=-.025,peak=top-(e.nextKnit-r-1)*h;
+    const z=-.025,peak=bottom+(top-bottom)*compact-(e.nextKnit-e.r-1)*h;
     points=sample([
      [[-w/2,bottom,-.10],[-w*.22,bottom,-.10],[w*.16,peak+h*.25,z],[w*.13,peak,z]],
      [[w*.13,peak,z],[w*.19,peak-h*.18,z],[-w*.19,peak-h*.18,z],[-w*.13,peak,z]],
      [[-w*.13,peak,z],[-w*.16,peak+h*.25,z],[w*.22,bottom,-.10],[w/2,bottom,-.10]]
     ]);
    }
-   points=points.map(v=>warp([v[0]+n*w,v[1]-r*h,v[2]]));
-   out.push({points,row:r,radius:1,type:e.action,event:e});
+   return points.map(v=>warp([v[0]+e.n*w,v[1]-e.r*h,v[2]]));
+  }
+  let compact=1;const profile=profileFor(p);
+  // Fit the mean yarn path over the eight operations, not 2.7 mm for every
+  // separate K and T. Grid pitches stay fixed; this is geometry fitting only.
+  if(profile){const unit=events(p,0,4).filter(e=>e.n<2),mean=c=>unit.reduce((s,e)=>s+arc(make(e,c)),0)/unit.length;
+   let low=.05,high=2;
+   if(mean(low)>profile.meanLengthMm||mean(high)<profile.meanLengthMm)throw Error('Piqué yarn length cannot fit this geometric model');
+   for(let i=0;i<34;i++){const mid=(low+high)/2;if(mean(mid)>profile.meanLengthMm)high=mid;else low=mid}
+   compact=(low+high)/2;
+  }
+  for(let r=-layout.rows-R*2;r<R*2;r++)for(let n=-2;n<layout.cols+2;n++){
+   const e=event(p,r,n),points=make(e,compact);
+   out.push({points,row:r,radius:1,type:e.action,event:e,compact});
   }
   return out;
  }
- function texture(o,back){return root.jerseyStudy.texture(o,back,(m,layout)=>paths(o,m,layout).map(path=>({...path,x:back?layout.cols*layout.dx:0})))}
+ function texture(o,back){return root.jerseyStudy.texture(o,back,(m,layout)=>paths(o,m,layout).map(path=>({...path,x:back?layout.cols*layout.dx:0})),modelFor(o.pattern))}
  function renderDetail(ctx,o){
-  const W=ctx.canvas.width,H=ctx.canvas.height,m=root.jerseyStudy.model(),structure=o.mode==='loops',cols=8,rows=8,scale=85*o.zoom;
+  const W=ctx.canvas.width,H=ctx.canvas.height,m=modelFor(o.pattern),structure=o.mode==='loops',cols=8,rows=8,scale=85*o.zoom;
   ctx.fillStyle=structure?'#f5f8f3':'#e9ece5';ctx.fillRect(0,0,W,H);
   const list=paths(o,m,{cols,rows,dx:40,dy:40*m.coursePitch/m.walePitch,px:40/m.walePitch}),segments=[];
   const ox=(W-cols*m.walePitch*scale)/2+(o.pan?.x||0),oy=H*.72+(o.pan?.y||0);
@@ -69,5 +89,5 @@
   const row=mod(selected,p.length),tucks=events(p,row,row+1).filter(e=>e.action==='T'),clears=events(p,row,row+1).filter(e=>e.clears?.tucks.length);
   return 'F'+(row+1)+': '+[...tucks.map(e=>'N'+(e.n+1)+' holds the old knit and collects tuck yarn'),...clears.map(e=>'N'+(e.n+1)+' knits through the held loop and '+e.tucks.length+' tuck bight'+(e.tucks.length>1?'s':''))].join('; ')+(tucks.length||clears.length?'.':'all needles form new knit loops.');
  }
- root.tuckStudy={supports,events,paths,applicable,texture,renderDetail,describe};if(typeof module!=='undefined')module.exports=root.tuckStudy;
+ root.tuckStudy={piqueReference,profileFor,modelFor,supports,events,paths,applicable,texture,renderDetail,describe};if(typeof module!=='undefined')module.exports=root.tuckStudy;
 })(typeof window==='undefined'?globalThis:window);

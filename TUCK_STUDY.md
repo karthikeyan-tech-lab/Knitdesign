@@ -21,7 +21,7 @@ At F1, N2 retains the knit from F2 of the previous repeat and collects tuck yarn
 - Multiple tuck actions are retained in the event graph until a K clears them. No three-tuck knitting limit is imposed.
 - Held knit paths span intervening tuck passes. Tuck bights are additional continuous feeder paths. A small continuous displacement field illustrates neighbouring-loop pull; it is a geometric assumption, not a force calculation.
 - Front/back, garment, magnifier and detail views use the shared paths. The normal jersey renderer remains byte-identical for the reference test after its texture renderer was generalized.
-- The 30 Ne cotton jersey's 30 WPI / 42 CPI spacing is only an initial drawing scale for this tuck study. It is not a measured or predicted tuck density. The stretched and tucked paths are not constrained to 3 mm yarn length. No contact/collision, yarn tension, relaxation, shrinkage or finished GSM prediction is claimed.
+- For unmatched K/T structures, the 30 Ne cotton jersey's 30 WPI / 42 CPI spacing is only an initial drawing scale, not measured or predicted tuck density. Their stretched and tucked paths are not constrained to 3 mm yarn length. Matching single-tuck piqué repeats instead use the separately measured profile described below. No contact/collision, yarn tension, relaxation, shrinkage or finished GSM prediction is claimed.
 - Model validation against an actual K/T + K/K knitted swatch is still required. Do not treat the illustration as a production feasibility check.
 
 ## Validation
@@ -31,3 +31,15 @@ At F1, N2 retains the knit from F2 of the previous repeat and collects tuck yarn
 `node tests/jersey.cjs` and `node tests/colour-order.cjs` pass. The plain-jersey swatch PNG is byte-identical before/after the shared renderer refactor. JavaScript syntax checks pass. All 28 Chrome browser checks passed on the managed development preview, including loading the tuck example, F1/F2 explanations, all three tuck views, JSON roundtrip, miss fallback and Undo recovery. Responsive widths 390px/1280px and the existing synchronous renderer fallback checks also pass. Native mobile performance was not measured. HTTPS/offline installation remains outside the HTTP preview checks.
 
 Research context: KnitScape (Twigg-Smith, Whiting and Peek, CHI 2024) builds yarn topology from operation repeats and simulates deformation. This implementation uses an independently written periodic event graph and heuristic geometry; it does not embed KnitScape code or claim its simulation capabilities. https://depts.washington.edu/machines/projects/knitscape/
+
+## Measured single-tuck piqué reference
+
+The user supplied front/back piqué photos and confirmed: 30 Ne, 100% cotton, 24G, finished fabric, 35 WPI, 50 CPI and 27 cm yarn per 100 needles. The reference repeat is F1 K/K, F2 K/T, F3 K/K, F4 T/K. Wale pitch is 25.4/35 = 0.725714 mm; course pitch is 25.4/50 = 0.508 mm.
+
+**Try single-tuck piqué** loads that exact repeat. The measured profile is applied only to this repeating operation structure, including cyclic feeder shifts, needle swaps and exact tiling. Other tuck structures retain the uncalibrated study. Plain jersey keeps its separate 30 WPI / 42 CPI / 3 mm reference. No yarn colours are changed by the preset.
+
+For the matching piqué, a scalar height fit holds the measured grid pitches fixed and adjusts loop proportions so the mean sampled yarn path across the eight operations is 2.7 mm. Interpreting the single reported yarn length as a repeat-wide mean is a modelling assumption: feeder-specific K/T yarn delivery was not supplied. Individual K and T paths can have different lengths. This is geometric fitting to supplied measurements, not a tension, shrinkage, collision or finishing simulation. The supplied photos guide qualitative comparison; no pixel-registered or numerical image-match accuracy is claimed.
+
+`tests/pique.cjs` verifies measured pitches, the mean 2.7 mm constraint, all eight phase/needle rotations, continuous yarn joins, cyclic releases and separate profile scope. The held-loop graph is unchanged. The real sample is still required to validate loop shape, local deformation, fibre coverage and back appearance.
+
+The extended Chrome browser suite passes all 32 checks, including the exact measured piqué preset, automatic reference selection, alternating needle tuck positions and JSON restoration of the matching profile. The original plain-jersey swatch remains byte-identical.
