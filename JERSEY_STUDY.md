@@ -20,7 +20,7 @@ This is an initial geometric study, not a physically relaxed, collision-validate
 
 Run `node tests/jersey.cjs` with the development dependency @napi-rs/canvas available. Tests check the 3 mm conversion, invalid inputs, sampled path length, matching course endpoints and tangent alignment, deterministic texture output, all-knit gating, distinct faces, garment cache invalidation, mixed-pattern fallback and maximum 32 × 24 repeats. All passed in the development environment. All application JavaScript passed `node --check`. A generated swatch was visually inspected.
 
-Browser end-to-end tests were not run: the environment has Playwright but no browser executable. Existing `tests/pwa.cjs` and `tests/editor.cjs` must still run before release; add browser coverage for checkbox save/load, worker/main-thread parity, switching K/T/M designs and offline update. No production deployment or merge was performed.
+Browser validation completed on 31 October 2026 using the managed development preview in Chrome. All 19 checks in `tests/browser.html` passed: fresh measured-study state, 390px layout, canvas rendering, front/back and zoom, tuck fallback, Undo, miss cam grouping, autosave reload, JSON export/import, PNG export, garment reverse, all view modes, maximum 32×24 repeat, maximum-repeat narrow layout, 1280px layout, and synchronous fallback. The tests verify download data, not native file dialogs. The narrow frame checks responsive layout, not performance on an actual phone. The HTTP development preview does not support service-worker installation; HTTPS/offline behavior and the existing Playwright PWA/editor suites remain unverified. No production merge or access change was performed. Vercel has automatically created a protected PR preview.
 
 ## Next calibration inputs
 
@@ -29,3 +29,5 @@ Yarn count system (Ne), composition (100% cotton) and condition (finished) are c
 ## Loop-shape refinement
 
 The supplied front and back photos were visually reviewed again. The revised geometry reduces the triangular mesh appearance and emphasizes vertical V-shaped wales on the face and curved bumps on the reverse. This is a qualitative comparison: the photos have no ruler and are not registered to matching stitch counts, so no numerical image-match accuracy is claimed. The measured pitches and 3 mm sampled length remain constrained. Depth, diameter, contact ordering and finishing effects still need physical validation.
+
+To repeat the browser checks, copy `tests/browser.html` into `dist/tests/browser.html`, serve `dist/`, then open `/tests/browser.html`. The harness uses temporary designs on the test origin and restores its previous autosave in its final cleanup. Do not run it on an origin containing important production designs.
