@@ -17,7 +17,7 @@
   // Keep this test origin's pre-existing design intact on completion.
   localStorage.removeItem('knit-custom-v3');
   frame.src='../index.html';await new Promise(r=>frame.onload=r);doc=frame.contentDocument;win=frame.contentWindow;await ready();
-  check(el('jerseyStudy').checked&&el('space').disabled,'fresh browser opens measured jersey study');
+  check(el('jerseyStudy').checked&&el('tuckStudy').checked&&el('space').disabled&&el('swatch').classList.contains('active'),'fresh browser opens swatch with improved structure enabled');
   check(doc.documentElement.scrollWidth<=win.innerWidth,'390px layout has no horizontal page overflow');
   check(el('view').getContext('2d').getImageData(400,300,1,1).data[3]===255,'fabric canvas renders');
   const meanTorso=()=>{const d=el('garmentView').getContext('2d').getImageData(450,280,180,260).data,s=[0,0,0];for(let i=0;i<d.length;i+=4)for(let c=0;c<3;c++)s[c]+=d[i+c];return s.map(v=>v/(d.length/4))};
@@ -31,7 +31,7 @@
   }
   const frontBoth=el('view').toDataURL();input('side','back');await ready();check(el('view').toDataURL()!==frontBoth,'front/back selection updates the image');
   input('side','both');input('zoom','1.5');await ready();check(el('view').toDataURL()!==frontBoth,'zoom updates the image');click('fit');await ready();
-  doc.querySelector('[data-brush="T"]').click();paint(0,0);await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('T')&&el('jerseyMessage').textContent.includes('paused')&&!el('space').disabled,'tuck painting pauses jersey study without losing design');
+  doc.querySelector('[data-brush="T"]').click();paint(0,0);await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('T')&&el('jerseyMessage').textContent.includes('paused')&&el('space').disabled&&el('tuckMessage').textContent.includes('active'),'tuck painting automatically uses improved structure');
   click('undo');await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('K')&&el('space').disabled,'Undo restores jersey and fixed density');
   doc.querySelector('[data-brush="M"]').click();paint(0,0);await ready();check(el('trackMap').textContent.includes('1, 2'),'miss painting updates cam grouping');
   await wait(()=>el('saveStatus').textContent.includes('Saved'),'autosave');

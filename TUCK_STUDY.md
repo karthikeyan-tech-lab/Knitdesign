@@ -51,3 +51,6 @@ Matching piqué paths now include staggered tuck-centred depressions, raised sur
 The 35 WPI / 50 CPI grid stays fixed and the 2.7 mm mean-path fit is recomputed after deformation. Tests check that constraint at relief 0, 0.6 and 1. Relief is saved/restored in design JSON and included in worker, fabric and garment cache keys. Other structures retain their existing rendering. Plain-jersey regression output remains byte-identical. The appearance is an approximation pending swatch comparison, not a validated fabric prediction.
 
 All 34 Chrome browser checks pass, including relief changes updating both fabric and garment and JSON restoration. Unit geometry, colour-order and plain-jersey regression checks pass.
+
+## Default views
+Improved jersey and supported K/T geometry are enabled by default in the initial Fabric swatch and in the garment preview. Legacy designs without explicit study preferences inherit the enabled defaults; explicitly saved false preferences remain respected. Miss-containing repeats retain the existing fallback until float geometry is implemented.
