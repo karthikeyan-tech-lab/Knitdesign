@@ -43,6 +43,13 @@
   captured=null;click('export');await wait(()=>captured,'PNG export');check(captured.name==='knit-preview.png'&&captured.url.startsWith('data:image/png'),'PNG export uses rendered fabric');
   change('preset','jersey');await ready();const oldGarment=el('garmentView').toDataURL();input('garmentSide','back');await ready();check(el('garmentView').toDataURL()!==oldGarment,'garment back view updates');
   for(const mode of ['fabric','loops','swatch']){click(mode);await ready()}check(true,'all three view modes render');
+  click('tryTuck');await ready();check(el('tuckStudy').checked&&el('tuckMessage').textContent.includes('active')&&doc.querySelector('[data-r="0"][data-n="1"]').textContent.includes('T'),'tuck example opens and enables the study');
+  input('step','1');await ready();check(el('tuckFormation').textContent.includes('collects tuck yarn'),'feeder 1 explains held loop and collected yarn');
+  input('step','2');await ready();check(el('tuckFormation').textContent.includes('knits through the held loop'),'feeder 2 explains clearing the held loop and tuck');
+  for(const mode of ['fabric','loops','swatch']){click(mode);await ready()}check(true,'tuck fabric, yarn detail and loop structure render');
+  click('save');const tuckSaved=await (await fetch(captured.url)).json();el('tuckStudy').checked=false;el('tuckStudy').dispatchEvent(new win.Event('input',{bubbles:true}));const tuckTransfer=new win.DataTransfer();tuckTransfer.items.add(new win.File([JSON.stringify(tuckSaved)],'tuck-roundtrip.json',{type:'application/json'}));el('editorMessage').textContent='';el('load').files=tuckTransfer.files;el('load').dispatchEvent(new win.Event('change',{bubbles:true}));await wait(()=>el('editorMessage').textContent==='Design loaded.','tuck import');await ready();check(el('tuckStudy').checked&&tuckSaved.tuckStudy===true,'JSON roundtrip preserves tuck study');
+  doc.querySelector('[data-brush="M"]').click();paint(0,1);await ready();check(el('tuckMessage').textContent.includes('paused'),'miss stitches safely fall back without changing design');click('undo');await ready();check(el('tuckMessage').textContent.includes('active'),'Undo resumes tuck study');
+  change('preset','jersey');await ready();
   change('rows','32');el('needles').value='24';click('applySize');await ready();check(doc.querySelectorAll('#grid button').length===768,'maximum 32×24 design renders');check(doc.documentElement.scrollWidth<=win.innerWidth,'maximum repeat still fits 390px layout');
   frame.width='1280';await new Promise(r=>setTimeout(r,150));check(doc.documentElement.scrollWidth<=win.innerWidth,'1280px desktop layout has no horizontal overflow');
   // Exercise the documented synchronous fallback using the same source.

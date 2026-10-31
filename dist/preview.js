@@ -6,7 +6,7 @@
   function finish(){for(let i=waiters.length-1;i>=0;i--)if(complete>=waiters[i].id){waiters[i].resolve();waiters.splice(i,1)}}
   function showError(error){status('Preview could not be drawn. Try a smaller repeat or reload the app.');console.warn('Preview renderer:',error)}
   function drawGarment(job){
-    const key=JSON.stringify([job.options.pattern,job.options.yarns,job.options.color,job.options.thickness,job.options.spacing,job.options.jerseyStudy,job.options.garmentType,job.options.garmentSide]);
+    const key=JSON.stringify([job.options.pattern,job.options.yarns,job.options.color,job.options.thickness,job.options.spacing,job.options.jerseyStudy,job.options.tuckStudy,job.options.garmentType,job.options.garmentSide]);
     if(key!==garmentKey){renderGarment(document.getElementById('garmentView').getContext('2d'),job.options);garmentKey=key}
   }
   function fallback(job){

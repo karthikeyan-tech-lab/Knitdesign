@@ -24,21 +24,24 @@
  }
  function applicable(o){return !!o.jerseyStudy&&o.pattern.every(row=>row.every(a=>a==='K'))}
  const hash=(a,b)=>{const v=Math.sin(a*127.1+b*311.7)*43758.5453;return v-Math.floor(v)};
- function texture(o,back){
-  const m=model(),cols=8,rows=Math.ceil(8/o.pattern.length)*o.pattern.length,width=320,px=40/m.walePitch;
+ function texture(o,back,buildPaths){
+  const m=model(),cols=buildPaths?Math.ceil(8/o.pattern[0].length)*o.pattern[0].length:8,rows=Math.ceil(8/o.pattern.length)*o.pattern.length,width=cols*40,px=40/m.walePitch;
   const height=Math.round(rows*m.coursePitch*px),dy=height/rows,dx=width/cols;
   const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const g=canvas.getContext('2d');
   const image=g.createImageData(width,height),pixels=image.data,depth=new Float32Array(width*height).fill(-100),shading=new Float32Array(width*height),red=new Uint8Array(width*height),green=new Uint8Array(width*height),blue=new Uint8Array(width*height);
   const rgb=hex=>hex.match(/\w\w/g).map(v=>parseInt(v,16)),yarn=r=>rgb(o.yarns?o.yarns[(r%o.pattern.length+o.pattern.length)%o.pattern.length]:o.color);
   // Diameter is an appearance estimate, not a measurement derived from Ne.
   const radius=(.120+(o.thickness-7)*.006)*px;
-  for(let r=-3;r<rows+3;r++)for(let n=-1;n<cols+1;n++){
-   const col=yarn(r),jitter=Math.sin(r/rows*Math.PI*2)*.30;
+  const paths=buildPaths?buildPaths(m,{cols,rows,dx,dy,px}):(()=>{
+   const paths=[];for(let r=-3;r<rows+3;r++)for(let n=-1;n<cols+1;n++)paths.push({points:m.points,row:r,x:n*dx,y:r*dy+Math.sin(r/rows*Math.PI*2)*.30});return paths;
+  })();
+  for(const path of paths){
+   const col=yarn(path.row),points=path.points,radius=(.120+(o.thickness-7)*.006)*px*(path.radius||1);
    let distance=0;
-   for(let i=1;i<m.points.length;i++){
-    const a=m.points[i-1],b=m.points[i],flip=back?-1:1;
-    const ax=n*dx+flip*a[0]*px,ay=r*dy+a[1]*px+jitter,az=flip*a[2]*px;
-    const bx=n*dx+flip*b[0]*px,by=r*dy+b[1]*px+jitter,bz=flip*b[2]*px;
+   for(let i=1;i<points.length;i++){
+    const a=points[i-1],b=points[i],flip=back?-1:1;
+    const ax=(path.x||0)+flip*a[0]*px,ay=(path.y||0)+a[1]*px,az=flip*a[2]*px;
+    const bx=(path.x||0)+flip*b[0]*px,by=(path.y||0)+b[1]*px,bz=flip*b[2]*px;
     const vx=bx-ax,vy=by-ay,vv=vx*vx+vy*vy||1e-9,len=Math.sqrt(vv),tx=vx/len,ty=vy/len;
     const x0=Math.max(0,Math.floor(Math.min(ax,bx)-radius-1)),x1=Math.min(width-1,Math.ceil(Math.max(ax,bx)+radius+1));
     const y0=Math.max(0,Math.floor(Math.min(ay,by)-radius-1)),y1=Math.min(height-1,Math.ceil(Math.max(ay,by)+radius+1));
