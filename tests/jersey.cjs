@@ -20,7 +20,7 @@ const start=performance.now(),front=jersey.texture(o,false),back=jersey.texture(
 assert.notDeepEqual(front.toBuffer('image/png'),back.toBuffer('image/png'));
 assert.deepEqual(front.toBuffer('image/png'),jersey.texture(o,false).toBuffer('image/png'),'The calculated texture must be deterministic');
 const canvas=createCanvas(1080,720);renderFabricSheet(canvas.getContext('2d'),o);fs.writeFileSync('/tmp/jersey-study.png',canvas.toBuffer('image/png'));
-renderGarment(canvas.getContext('2d'),o);const prior=canvas.toBuffer('image/png');renderGarment(canvas.getContext('2d'),{...o,jerseyStudy:false});assert.notDeepEqual(prior,canvas.toBuffer('image/png'));
+renderGarment(canvas.getContext('2d'),o);const prior=canvas.toBuffer('image/png');renderGarment(canvas.getContext('2d'),{...o,jerseyStudy:false});assert.deepEqual(prior,canvas.toBuffer('image/png'),'Legacy false flags cannot disable automatic jersey');
 renderFabricSheet(canvas.getContext('2d'),{...o,pattern:[['K','T'],['K','K']]});
 const max={...o,pattern:Array.from({length:32},()=>Array(24).fill('K'))};renderFabricSheet(canvas.getContext('2d'),max);
 console.log('Passed: 3mm conversion, invalid length, sampled arc length, continuous course endpoints, all-knit gating, front/back distinction, garment cache invalidation, mixed fallback, maximum repeat. Total canvas test ms:',Math.round(performance.now()-start));

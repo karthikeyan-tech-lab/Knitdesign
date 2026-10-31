@@ -34,7 +34,7 @@ node tests/pwa.cjs
 
 Set `CHROMIUM_PATH` if Chromium is elsewhere. The test uses Playwright from the development environment; it is not an application runtime dependency. See [VALIDATION.md](VALIDATION.md) for measurements and coverage.
 
-For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V1.7 is shown in the header. This activates the new offline cache without clearing saved designs.
+For existing installed copies, reopen the app online and choose **Update app** when it appears. Version V2.0 is shown in the header. This activates the new offline cache without clearing saved designs.
 
 ## Deploy and access
 
@@ -56,3 +56,27 @@ The fabric views are approximate illustrations, not physical simulation or verif
 Run `node tests/editor.cjs` alongside the existing PWA suite to verify mobile 12×8 and 32×24 repeats. See [RESEARCH.md](RESEARCH.md) for references, appearance improvements and limits.
 
 V1.7 refines the face-loop legs, back crowns and curved yarn strand detail using the supplied visual reference. It keeps your stitch design and yarn settings unchanged.
+
+
+## Automatic fabric structure (V2.0)
+
+Fabric swatch and garment views automatically share procedural jersey yarn geometry for all-knit repeats and tuck geometry for K/T repeats where every needle knits. Both faces, feeder colours and surface relief use the same cached face textures. There are no geometry switches; legacy false preferences are ignored without changing stitches, needle order or derived cam tracks. Machine-track selection is now retained in JSON and autosave as well.
+
+The plain-jersey reference is finished 30 Ne cotton, 24G, 30 WPI × 42 CPI and 3.0 mm yarn per needle. Matching single-tuck piqué uses 35 WPI × 50 CPI and a fitted 2.7 mm mean path over F1 K/K, F2 K/T, F3 K/K, F4 T/K. Exact tiling and cyclic phase shifts also match. Other supported K/T repeats use an uncalibrated scale. These are fitted visualizations, not validated physical simulations. Miss-containing and unreleased-loop designs retain the existing rendering; miss is never substituted with tuck.
+
+With the server above running, validate with:
+
+```sh
+node tests/defaults.cjs
+node tests/jersey.cjs
+node tests/tuck.cjs
+node tests/pique.cjs
+node tests/colour-order.cjs
+node tests/shared-texture.cjs
+node tests/browser.cjs
+node tests/structures.cjs
+node tests/pwa.cjs
+node tests/editor.cjs
+```
+
+`structures.cjs` covers legacy JSON, both faces, colour/relief/stitch updates, cam preservation, PNG exports, autosave, worker/fallback rendering and maximum-size mobile-layout timing. It prints its temporary screenshot directory. Set `KNIT_ARTIFACTS` to choose another output directory and `KNIT_BASE_URL` to verify the same workflow against a deployed origin. Mobile checks use emulation on the development machine; physical-device performance and native installation remain unverified.

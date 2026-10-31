@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {createCanvas,Path2D}=require('@napi-rs/canvas');global.window=global;global.Path2D=Path2D;global.document={createElement:()=>createCanvas(1,1)};
+const jersey=require('../dist/jersey.js'),tuck=require('../dist/tuck.js');vm.runInThisContext(fs.readFileSync(require.resolve('../dist/renderer.js'),'utf8'));
+const pattern=[['K','T'],['K','K']],ev=tuck.events(pattern),held=ev.find(e=>e.r===0&&e.n===1),clear=ev.find(e=>e.r===1&&e.n===1);
+assert.equal(held.heldFrom,-1);assert.equal(held.nextKnit,1);assert.equal(held.clears,null);
+assert.deepEqual(clear.clears,{knit:-1,tucks:[0]});assert.equal(clear.nextKnit,3);
+const rotated=tuck.events([pattern[1],pattern[0]]).find(e=>e.r===0&&e.n===1);assert.deepEqual(rotated.clears,{knit:-2,tucks:[-1]});
+const repeated=tuck.events([['T','K'],['T','K'],['K','K']]).find(e=>e.r===2&&e.n===0);assert.deepEqual(repeated.clears.tucks,[0,1]);
+assert(!tuck.supports([['T','K'],['T','K']]));assert(!tuck.supports([['M','T'],['K','K']]));assert(!tuck.supports([['K','K'],['K','K']]));
+const m=jersey.model(),paths=tuck.paths({pattern},m,{cols:8,rows:8,dx:40,dy:40*30/42,px:40/m.walePitch});
+const left=paths.find(p=>p.row===0&&p.event.n===0),right=paths.find(p=>p.row===0&&p.event.n===1);
+assert(left.points.at(-1).every((v,i)=>Math.abs(v-right.points[0][i])<1e-9),'K and T feeder yarn must meet at the needle boundary');
+const heldPath=paths.find(p=>p.row===1&&p.event.n===1),ordinary=paths.find(p=>p.row===1&&p.event.n===0),extent=p=>Math.max(...p.points.map(v=>v[1]))-Math.min(...p.points.map(v=>v[1]));assert(extent(heldPath)>extent(ordinary));
+const o={pattern,tuckStudy:true,jerseyStudy:true,color:'#e4e3dc',yarns:null,thickness:7,spacing:22,side:'both',mode:'swatch',zoom:1,lens:{x:.5,y:.5},garmentType:'tee',garmentSide:'front'};
+const c=createCanvas(1080,720),g=c.getContext('2d');renderFabricSheet(g,o);fs.writeFileSync('/tmp/tuck-study.png',c.toBuffer('image/png'));const first=c.toBuffer('image/png');renderFabricSheet(g,{...o,tuckStudy:false});assert.deepEqual(first,c.toBuffer('image/png'),'Legacy false flags cannot disable automatic tuck');
+renderGarment(g,o);const garment=c.toBuffer('image/png');renderGarment(g,{...o,tuckStudy:false});assert.deepEqual(garment,c.toBuffer('image/png'),'Garment also ignores legacy flags');
+const front=tuck.texture(o,false),back=tuck.texture(o,true);assert.notDeepEqual(front.toBuffer('image/png'),back.toBuffer('image/png'));
+const max={...o,pattern:Array.from({length:32},(_,r)=>Array.from({length:24},(_,n)=>r%2===0&&n%2?'T':'K'))};const start=performance.now();renderFabricSheet(g,max);console.log(JSON.stringify({passed:['cyclic held state','tuck retained until knit','release includes old loop and tuck yarn','rotated repeat boundary','multiple tucks retained','unsupported patterns gated','continuous K/T yarn joins','held loop spans tuck pass','automatic swatch and garment ignore old switches','front/back share model but differ'],maxRepeatRenderMs:Math.round(performance.now()-start)}));
