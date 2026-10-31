@@ -43,3 +43,11 @@ For the matching piqué, a scalar height fit holds the measured grid pitches fix
 `tests/pique.cjs` verifies measured pitches, the mean 2.7 mm constraint, all eight phase/needle rotations, continuous yarn joins, cyclic releases and separate profile scope. The held-loop graph is unchanged. The real sample is still required to validate loop shape, local deformation, fibre coverage and back appearance.
 
 The extended Chrome browser suite passes all 32 checks, including the exact measured piqué preset, automatic reference selection, alternating needle tuck positions and JSON restoration of the matching profile. The original plain-jersey swatch remains byte-identical.
+
+## Piqué surface refinement
+
+Matching piqué paths now include staggered tuck-centred depressions, raised surrounding yarn and compacted held-loop proportions, guided qualitatively by the supplied front/back swatches. Surface relief controls this estimated depth from 0 to 1. Yarn shading follows the three-dimensional tangent for these paths; exposed gaps receive deeper shading. This is procedural geometry, with no photographic texture.
+
+The 35 WPI / 50 CPI grid stays fixed and the 2.7 mm mean-path fit is recomputed after deformation. Tests check that constraint at relief 0, 0.6 and 1. Relief is saved/restored in design JSON and included in worker, fabric and garment cache keys. Other structures retain their existing rendering. Plain-jersey regression output remains byte-identical. The appearance is an approximation pending swatch comparison, not a validated fabric prediction.
+
+All 34 Chrome browser checks pass, including relief changes updating both fabric and garment and JSON restoration. Unit geometry, colour-order and plain-jersey regression checks pass.

@@ -51,7 +51,14 @@
      const ex=x+.5-ax-t*vx,ey=y+.5-ay-t*vy,d2=ex*ex+ey*ey;if(d2>radius*radius)continue;
      const nz=Math.sqrt(Math.max(0,1-d2/(radius*radius))),z=az+t*(bz-az)+radius*nz,index=y*width+x;
      if(z<depth[index])continue;depth[index]=z;
-     const nx=ex/radius,ny=ey/radius,light=Math.max(0,-.38*nx-.45*ny+.81*nz);
+     let nx=ex/radius,ny=ey/radius,normalZ=nz;
+     if(path.surfaceNormals){
+      // Project the round-yarn normal perpendicular to its 3D tangent so relief
+      // bends the lighting, rather than changing only overlap order.
+      const vz=bz-az,l3=Math.hypot(vx,vy,vz)||1,tx3=vx/l3,ty3=vy/l3,tz3=vz/l3,dot=nx*tx3+ny*ty3+normalZ*tz3;
+      nx-=dot*tx3;ny-=dot*ty3;normalZ-=dot*tz3;const norm=Math.hypot(nx,ny,normalZ)||1;nx/=norm;ny/=norm;normalZ/=norm;
+     }
+     const light=Math.max(0,-.38*nx-.45*ny+.81*normalZ);
      const across=(-ty*ex+tx*ey)/radius,along=distance+t*len;
      const twist=Math.sin(along*1.10+across*7.5),fibres=(hash(x,y)-.5)*.065;
      shading[index]=.78+.21*light+.018*twist+fibres*.6;
@@ -64,7 +71,7 @@
   const bg=[0,1,2].map(i=>Math.round(Array.from({length:o.pattern.length},(_,r)=>yarn(r)[i]).reduce((a,b)=>a+b,0)/o.pattern.length));
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
    const i=y*width+x,p=i*4;
-   if(depth[i]===-100){const k=.84+(hash(x,y)-.5)*.045;pixels[p]=bg[0]*k;pixels[p+1]=bg[1]*k;pixels[p+2]=bg[2]*k;pixels[p+3]=255;continue}
+   if(depth[i]===-100){const k=(m.surface==='pique' ? .68 : .84)+(hash(x,y)-.5)*.045;pixels[p]=bg[0]*k;pixels[p+1]=bg[1]*k;pixels[p+2]=bg[2]*k;pixels[p+3]=255;continue}
    // Nearby higher yarn softly shadows recesses, enhancing intermeshing contacts.
    let shadow=0;for(const [ox,oy]of [[-3,-3],[3,-3],[-3,3],[3,3]]){const xx=(x+ox+width)%width,yy=(y+oy+height)%height;shadow+=Math.min(1,Math.max(0,(depth[yy*width+xx]-depth[i]-1)/radius))}
    const k=shading[i]*(1-shadow*.025);pixels[p]=red[i]*k;pixels[p+1]=green[i]*k;pixels[p+2]=blue[i]*k;pixels[p+3]=255;

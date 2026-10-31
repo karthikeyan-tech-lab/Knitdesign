@@ -8,7 +8,7 @@
   for(let shift=0;shift<4;shift++)for(let swap=0;swap<2;swap++)if(p.every((row,r)=>row.every((a,n)=>a===repeat[(r+shift)%4][(n+swap)%2])))return piqueReference;
   return null;
  }
- function modelFor(p){const profile=profileFor(p);return profile?root.jerseyStudy.model(profile.meanLengthMm,profile):root.jerseyStudy.model()}
+ function modelFor(p){const profile=profileFor(p);return profile?{...root.jerseyStudy.model(profile.meanLengthMm,profile),surface:'pique'}:root.jerseyStudy.model()}
  const arc=points=>points.slice(1).reduce((sum,v,i)=>sum+Math.hypot(...v.map((x,k)=>x-points[i][k])),0);
  function valid(p){return Array.isArray(p)&&p.length>0&&Array.isArray(p[0])&&p[0].length>0&&p.every(row=>row.length===p[0].length&&row.every(a=>['K','T','M'].includes(a)))}
  function supports(p){return valid(p)&&p.some(row=>row.includes('T'))&&p.every(row=>!row.includes('M'))&&p[0].every((_,n)=>p.some(row=>row[n]==='K'))}
@@ -23,20 +23,26 @@
  function applicable(o){return !!o.tuckStudy&&supports(o.pattern)}
  function sample(parts){const out=[];for(const [j,p]of parts.entries())for(let i=j?1:0;i<=48;i++){const t=i/48,u=1-t;out.push([0,1,2].map(k=>u*u*u*p[0][k]+3*u*u*t*p[1][k]+3*u*t*t*p[2][k]+t*t*t*p[3][k]))}return out}
  function paths(o,m,layout){
-  const p=o.pattern,R=p.length,N=p[0].length,w=m.walePitch,h=layout.dy/layout.px,bottom=m.points[0][1],top=Math.min(...m.points.map(v=>v[1])),out=[];
+  const p=o.pattern,R=p.length,N=p[0].length,w=m.walePitch,h=layout.dy/layout.px,bottom=m.points[0][1],top=Math.min(...m.points.map(v=>v[1])),profile=profileFor(p),relief=Math.max(0,Math.min(1,Number.isFinite(o.relief)?o.relief:.6))/.6,out=[];
   // Apply a small continuous displacement field around tuck sites. Applying the
   // same field to coincident course endpoints keeps neighbouring yarns joined.
-  function warp(v){let x=v[0],y=v[1],sx=0,sy=0;const nearN=Math.round(x/w),nearR=Math.round(-y/h);
+  function warp(v){let x=v[0],y=v[1],sx=0,sy=0,sz=0;const nearN=Math.round(x/w),nearR=Math.round(-y/h);
    for(let dr=-1;dr<=1;dr++)for(let dn=-1;dn<=1;dn++){
     const r=nearR+dr,n=nearN+dn;if(p[mod(r,R)][mod(n,N)]!=='T')continue;
-    const dx=(x-n*w)/w,dy=(y+r*h)/h,k=Math.exp(-dx*dx*2-dy*dy*1.5);sx-=dx*w*.025*k;sy-=dy*h*.025*k;
-   }return [x+sx,y+sy,v[2]];
+    const dx=(x-n*w)/w,dy=(y+(r+(profile ? .65 : 0))*h)/h;
+    if(profile){
+     // A periodic tuck-centred depression and raised surrounding yarn give the
+     // staggered piqué relief. This is a visual shape fit, not force simulation.
+     const k=Math.exp(-dx*dx*5.5-dy*dy*2.4),rim=Math.exp(-dx*dx*1.5-dy*dy*.7)-k;
+     sx-=dx*w*.10*k;sy-=dy*h*.12*k;sz+=(-.080*k+.035*rim)*relief;
+    }else{const k=Math.exp(-dx*dx*2-dy*dy*1.5);sx-=dx*w*.025*k;sy-=dy*h*.025*k;}
+   }return [x+sx,y+sy,v[2]+sz];
   }
   function make(e,compact){let points;
    if(e.action==='K'){
     const span=e.nextKnit-e.r,stretch=compact+(span-1)*h/(bottom-top);
     points=m.points.map((v,i)=>{const envelope=Math.sin(Math.PI*i/(m.points.length-1))**2;
-     return [v[0]*(1+envelope*(e.tucks.length*.08-Math.min(span-1,4)*.08)),bottom+(v[1]-bottom)*stretch,v[2]];
+     return [v[0]*(1+envelope*(e.tucks.length*(profile ? .12 : .08)-Math.min(span-1,4)*(profile ? .16 : .08))),bottom+(v[1]-bottom)*stretch,v[2]+(profile?e.tucks.length*.04*envelope*relief:0)];
     });
    }else{
     // The feeder deposits a tuck bight while the old knit remains held.
@@ -50,7 +56,7 @@
    }
    return points.map(v=>warp([v[0]+e.n*w,v[1]-e.r*h,v[2]]));
   }
-  let compact=1;const profile=profileFor(p);
+  let compact=1;
   // Fit the mean yarn path over the eight operations, not 2.7 mm for every
   // separate K and T. Grid pitches stay fixed; this is geometry fitting only.
   if(profile){const unit=events(p,0,4).filter(e=>e.n<2),mean=c=>unit.reduce((s,e)=>s+arc(make(e,c)),0)/unit.length;
@@ -61,7 +67,7 @@
   }
   for(let r=-layout.rows-R*2;r<R*2;r++)for(let n=-2;n<layout.cols+2;n++){
    const e=event(p,r,n),points=make(e,compact);
-   out.push({points,row:r,radius:1,type:e.action,event:e,compact});
+   out.push({points,row:r,radius:1,type:e.action,event:e,compact,surfaceNormals:!!profile});
   }
   return out;
  }

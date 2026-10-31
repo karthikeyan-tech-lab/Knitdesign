@@ -117,7 +117,7 @@ function makeTexture(o,back){
 }
 function zig(g,x,y,w,h){g.beginPath();g.moveTo(x,y);for(let i=0;i<w;i+=10)g.lineTo(x+i,y+(i%20?4:0));g.lineTo(x+w,y);for(let i=0;i<h;i+=10)g.lineTo(x+w-(i%20?4:0),y+i);g.lineTo(x+w,y+h);for(let i=w;i>=0;i-=10)g.lineTo(x+i,y+h-(i%20?4:0));g.lineTo(x,y+h);for(let i=h;i>=0;i-=10)g.lineTo(x+(i%20?4:0),y+i);g.closePath()}
 function texture(o,face){
- const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing,o.jerseyStudy,o.tuckStudy]);
+ const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing,o.jerseyStudy,o.relief,o.tuckStudy]);
  if(sheetCache.key!==key)sheetCache={key};
  return sheetCache[face]||(sheetCache[face]=makeTexture(o,face==='back'));
 }

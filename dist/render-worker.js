@@ -9,7 +9,7 @@ self.onmessage=({data:{id,options}})=>{
   try{
     if(!context||!garmentContext)throw Error('Worker Canvas 2D is unavailable');
     (options.mode==='swatch'?renderFabricSheet:renderSwatch)(context,options);
-    const bitmap=canvas.transferToImageBitmap(),key=JSON.stringify([options.pattern,options.yarns,options.color,options.thickness,options.spacing,options.jerseyStudy,options.tuckStudy,options.garmentType,options.garmentSide]);
+    const bitmap=canvas.transferToImageBitmap(),key=JSON.stringify([options.pattern,options.yarns,options.color,options.thickness,options.spacing,options.jerseyStudy,options.relief,options.tuckStudy,options.garmentType,options.garmentSide]);
     let garment;
     if(key!==garmentKey){renderGarment(garmentContext,options);garment=garmentCanvas.transferToImageBitmap();garmentKey=key}
     self.postMessage({id,bitmap,garment},garment?[bitmap,garment]:[bitmap]);
