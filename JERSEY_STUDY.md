@@ -1,8 +1,8 @@
 # Plain single jersey reference study
 
-User reference, 31 October 2026: plain single jersey; yarn marked 30's; machine 24G; yarn length 30 cm for 100 needles. This gives 30 × 10 / 100 = 3.0 mm per stitch, assuming that yarn-length reading covers 100 formed stitches. Gauge is machine needle spacing, not measured finished WPI.
+User reference, 31 October 2026: plain single jersey; 30 Ne, 100% cotton, finished fabric (confirmed by the user); machine 24G; yarn length 30 cm for 100 needles. This gives 30 × 10 / 100 = 3.0 mm per stitch, assuming that yarn-length reading covers 100 formed stitches. Gauge is machine needle spacing, not measured finished WPI.
 
-Two supplied front/back photographs guide visual review only. They are not stored in the app or repository and are not used as image textures. Neither photograph includes a dimensional scale. No CPI, WPI, yarn diameter, fibre composition, finishing condition, or yarn count system was inferred.
+Two supplied front/back photographs guide visual review only. They are not stored in the app or repository and are not used as image textures. Neither photograph includes a dimensional scale. No CPI, WPI or yarn diameter was inferred. Yarn count system, composition and finished condition were explicitly confirmed by the user; the exact finishing process remains unrecorded.
 
 ## Try the study
 
@@ -14,7 +14,7 @@ The study is optional and defaults off. Adding T or M automatically uses the ori
 
 jersey.js defines a continuous, periodic three-dimensional yarn centreline, normalized to a sampled length of 3 mm per stitch. Adjacent needles have matching course endpoints. Front and back project the same coordinates from opposite sides, with depth-ordered yarn strokes. The existing magnifier and garment use these computed textures. Bounded tiles keep rendering work independent of the visible swatch size.
 
-This is an initial geometric study, not a physically relaxed, collision-validated knitted model. Loop proportions, depth, yarn thickness and course spacing are illustrative. Normalizing centreline length does not predict finished density. The 30's and 24G values are reference metadata; they do not silently determine yarn diameter or fabric CPI/WPI. The current image is not yet a validated visual match to the photographs.
+This is an initial geometric study, not a physically relaxed, collision-validated knitted model. Loop proportions, depth, yarn thickness and course spacing are illustrative. Normalizing centreline length does not predict finished density. The 30 Ne and 24G values are reference metadata; they do not silently determine yarn diameter or fabric CPI/WPI. The current image is not yet a validated visual match to the photographs.
 
 ## Validation
 
@@ -24,4 +24,4 @@ Browser end-to-end tests were not run: the environment has Playwright but no bro
 
 ## Next calibration inputs
 
-Confirm the yarn count system (Ne or other), fibre composition, ply and whether the photographed sample is greige, relaxed, washed or finished. Obtain measured CPI and WPI in that same condition, with front/back close-ups next to a ruler. Those measurements are calibration observations, not values predicted by this version.
+Yarn count system (Ne), composition (100% cotton) and condition (finished) are confirmed. Record ply and the finishing process. Obtain measured CPI and WPI in that same condition, with front/back close-ups next to a ruler. Those measurements are calibration observations, not values predicted by this version.
