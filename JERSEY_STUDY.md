@@ -2,7 +2,7 @@
 
 User reference, 31 October 2026: plain single jersey; 30 Ne, 100% cotton, finished fabric (confirmed by the user); machine 24G; yarn length 30 cm for 100 needles. This gives 30 × 10 / 100 = 3.0 mm per stitch, assuming that yarn-length reading covers 100 formed stitches. Gauge is machine needle spacing, not measured finished WPI.
 
-Two supplied front/back photographs guide visual review only. They are not stored in the app or repository and are not used as image textures. Neither photograph includes a dimensional scale. No CPI, WPI or yarn diameter was inferred. Yarn count system, composition and finished condition were explicitly confirmed by the user; the exact finishing process remains unrecorded.
+Two supplied front/back photographs guide visual review only. They are not stored in the app or repository and are not used as image textures. Neither photograph includes a dimensional scale. The user confirmed finished density as 30 WPI and 42 CPI: wale spacing = 25.4 / 30 = 0.8467 mm; course spacing = 25.4 / 42 = 0.6048 mm. No yarn diameter was inferred. Yarn count system, composition and finished condition were explicitly confirmed by the user; the exact finishing process remains unrecorded.
 
 ## Try the study
 
@@ -24,4 +24,4 @@ Browser end-to-end tests were not run: the environment has Playwright but no bro
 
 ## Next calibration inputs
 
-Yarn count system (Ne), composition (100% cotton) and condition (finished) are confirmed. Record ply and the finishing process. Obtain measured CPI and WPI in that same condition, with front/back close-ups next to a ruler. Those measurements are calibration observations, not values predicted by this version.
+Yarn count system (Ne), composition (100% cotton) and condition (finished) are confirmed. Record ply and the finishing process. Finished 30 WPI and 42 CPI are now recorded as calibration targets. Fitting the geometry jointly to measured spacing and the 3 mm loop length is still outstanding; the current renderer has not been physically calibrated. Obtain front/back close-ups next to a ruler. Those measurements are calibration observations, not values predicted by this version.
