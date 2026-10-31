@@ -1,43 +1,78 @@
-/* Plain-jersey geometry study. Not an equilibrium/contact simulation.
- * Both faces project the same periodic 3D yarn centreline. No photo textures.
+/* Measured-spacing jersey geometry with software tube rendering.
+ * Geometry is fitted, not mechanically relaxed. No photographic textures.
  */
 (function(root){
  const reference=Object.freeze({yarnCount:30,countSystem:'Ne',composition:'100% cotton',fabricCondition:'finished',gauge:24,wpi:30,cpi:42,waleSpacingMm:25.4/30,courseSpacingMm:25.4/42,yarnCm:30,needles:100});
  function loopLengthMm(cm,needles){if(!Number.isFinite(cm)||!Number.isFinite(needles)||cm<=0||needles<=0)throw Error('Positive yarn length and needle count required');return cm*10/needles}
+ const arc=points=>points.slice(1).reduce((s,p,i)=>s+Math.hypot(...p.map((v,k)=>v-points[i][k])),0);
  function model(length=3){
   if(!Number.isFinite(length)||length<=0)throw Error('Positive loop length required');
-  const parts=[
-   [[-.5,.62,-.18],[-.2,.77,-.18],[.35,.1,.18],[.22,-.63,.18]],
-   [[.22,-.63,.18],[.5,-1.12,.18],[-.5,-1.12,.18],[-.22,-.63,.18]],
-   [[-.22,-.63,.18],[-.35,.1,.18],[.2,.77,-.18],[.5,.62,-.18]]
-  ];
-  const points=[];
-  for(const [j,p]of parts.entries())for(let i=j?1:0;i<=36;i++){const t=i/36,u=1-t;points.push([0,1,2].map(k=>u*u*u*p[0][k]+3*u*u*t*p[1][k]+3*u*t*t*p[2][k]+t*t*t*p[3][k]))}
-  let arc=0;for(let i=1;i<points.length;i++)arc+=Math.hypot(...points[i].map((v,k)=>v-points[i-1][k]));
-  const scale=length/arc;
-  return {points:points.map(p=>p.map(v=>v*scale)),walePitch:scale,coursePitch:.72*scale,lengthMm:length};
+  const w=reference.waleSpacingMm,h=reference.courseSpacingMm,z=.075;
+  function points(head){
+   const parts=[
+    [[-w/2,h*.52,-z],[w*.04,h*.64,-z],[w*.28,-head*.2,z],[w*.40,-head,z]],
+    [[w*.40,-head,z],[w*.56,-head-h*.30,z],[-w*.56,-head-h*.30,z],[-w*.40,-head,z]],
+    [[-w*.40,-head,z],[-w*.28,-head*.2,z],[-w*.04,h*.64,-z],[w/2,h*.52,-z]]
+   ],out=[];
+   for(const [j,p]of parts.entries())for(let i=j?1:0;i<=48;i++){const t=i/48,u=1-t;out.push([0,1,2].map(k=>u*u*u*p[0][k]+3*u*u*t*p[1][k]+3*u*t*t*p[2][k]+t*t*t*p[3][k]))}
+   return out;
+  }
+  let low=0,high=length;
+  if(arc(points(low))>length)throw Error('Loop length is too short for measured spacing');
+  for(let i=0;i<45;i++){const mid=(low+high)/2;if(arc(points(mid))>length)high=mid;else low=mid}
+  const p=points((low+high)/2);return {points:p,walePitch:w,coursePitch:h,lengthMm:arc(p)};
  }
  function applicable(o){return !!o.jerseyStudy&&o.pattern.every(row=>row.every(a=>a==='K'))}
+ const hash=(a,b)=>{const v=Math.sin(a*127.1+b*311.7)*43758.5453;return v-Math.floor(v)};
  function texture(o,back){
-  const c=document.createElement('canvas');const m=model(),px=15/m.walePitch,dy=Math.round(m.coursePitch*px*(o.spacing/22)),dx=15;c.width=60;c.height=dy*o.pattern.length;const g=c.getContext('2d');
-  const rgb=hex=>hex.match(/\w\w/g).map(v=>parseInt(v,16));
-  const shade=(hex,f)=>'rgb('+rgb(hex).map(v=>Math.round(Math.max(0,Math.min(255,v*f)))).join(',')+')';
-  const yarn=r=>o.yarns?o.yarns[(r%o.pattern.length+o.pattern.length)%o.pattern.length]:o.color;
-  g.fillStyle=shade(yarn(0),.72);g.fillRect(0,0,c.width,c.height);
-  const segments=[];
-  for(let r=-3;r<Math.ceil(c.height/dy)+3;r++)for(let n=-1;n<5;n++){
+  const m=model(),cols=8,rows=Math.ceil(8/o.pattern.length)*o.pattern.length,width=320,px=40/m.walePitch;
+  const height=Math.round(rows*m.coursePitch*px),dy=height/rows,dx=width/cols;
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const g=canvas.getContext('2d');
+  const image=g.createImageData(width,height),pixels=image.data,depth=new Float32Array(width*height).fill(-100),shading=new Float32Array(width*height),red=new Uint8Array(width*height),green=new Uint8Array(width*height),blue=new Uint8Array(width*height);
+  const rgb=hex=>hex.match(/\w\w/g).map(v=>parseInt(v,16)),yarn=r=>rgb(o.yarns?o.yarns[(r%o.pattern.length+o.pattern.length)%o.pattern.length]:o.color);
+  // Diameter is an appearance estimate, not a measurement derived from Ne.
+  const radius=(.120+(o.thickness-7)*.006)*px;
+  for(let r=-3;r<rows+3;r++)for(let n=-1;n<cols+1;n++){
+   const col=yarn(r),jitter=(hash((n+cols)%cols,(r+rows)%rows)-.5)*.30;
+   let distance=0;
    for(let i=1;i<m.points.length;i++){
-    const a=m.points[i-1],b=m.points[i];
-    segments.push({a:[(n+(back?-a[0]:a[0])/m.walePitch)*dx,r*dy+a[1]*px],b:[(n+(back?-b[0]:b[0])/m.walePitch)*dx,r*dy+b[1]*px],z:(a[2]+b[2])*(back?-1:1),col:yarn(r)});
+    const a=m.points[i-1],b=m.points[i],flip=back?-1:1;
+    const ax=n*dx+flip*a[0]*px,ay=r*dy+a[1]*px+jitter,az=flip*a[2]*px;
+    const bx=n*dx+flip*b[0]*px,by=r*dy+b[1]*px+jitter,bz=flip*b[2]*px;
+    const vx=bx-ax,vy=by-ay,vv=vx*vx+vy*vy||1e-9,len=Math.sqrt(vv),tx=vx/len,ty=vy/len;
+    const x0=Math.max(0,Math.floor(Math.min(ax,bx)-radius-1)),x1=Math.min(width-1,Math.ceil(Math.max(ax,bx)+radius+1));
+    const y0=Math.max(0,Math.floor(Math.min(ay,by)-radius-1)),y1=Math.min(height-1,Math.ceil(Math.max(ay,by)+radius+1));
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+     const t=Math.max(0,Math.min(1,((x+.5-ax)*vx+(y+.5-ay)*vy)/vv));
+     const ex=x+.5-ax-t*vx,ey=y+.5-ay-t*vy,d2=ex*ex+ey*ey;if(d2>radius*radius)continue;
+     const nz=Math.sqrt(Math.max(0,1-d2/(radius*radius))),z=az+t*(bz-az)+radius*nz,index=y*width+x;
+     if(z<depth[index])continue;depth[index]=z;
+     const nx=ex/radius,ny=ey/radius,light=Math.max(0,-.38*nx-.45*ny+.81*nz);
+     const across=(-ty*ex+tx*ey)/radius,along=distance+t*len;
+     const twist=Math.sin(along*1.10+across*7.5),fibres=(hash(x,y)-.5)*.065;
+     shading[index]=.78+.21*light+.018*twist+fibres*.6;
+     red[index]=col[0];green[index]=col[1];blue[index]=col[2];
+    }
+    distance+=len;
    }
   }
-  segments.sort((a,b)=>a.z-b.z);
-  // Segment depth determines which yarn is visible from each face.
-  const width=1.15+o.thickness*.20;
-  // Paint each depth-sorted segment with a matte body and a soft highlight.
-  g.lineCap='round';
-  for(const s of segments){for(const [factor,light]of [[1.25,.66],[1,.91],[.48,1.04]]){g.strokeStyle=shade(s.col,light*(.96+s.z/m.walePitch*.10));g.lineWidth=width*factor;g.beginPath();g.moveTo(...s.a);g.lineTo(...s.b);g.stroke()}}
-  const expanded=document.createElement('canvas');expanded.width=1000;expanded.height=1100;const output=expanded.getContext('2d');output.fillStyle=output.createPattern(c,'repeat');output.fillRect(0,0,1000,1100);return expanded;
+  const bg=yarn(0);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const i=y*width+x,p=i*4;
+   if(depth[i]===-100){const k=.84+(hash(x,y)-.5)*.045;pixels[p]=bg[0]*k;pixels[p+1]=bg[1]*k;pixels[p+2]=bg[2]*k;pixels[p+3]=255;continue}
+   // Nearby higher yarn softly shadows recesses, enhancing intermeshing contacts.
+   let shadow=0;for(const [ox,oy]of [[-3,-3],[3,-3],[-3,3],[3,3]]){const xx=(x+ox+width)%width,yy=(y+oy+height)%height;shadow+=Math.min(1,Math.max(0,(depth[yy*width+xx]-depth[i]-1)/radius))}
+   const k=shading[i]*(1-shadow*.025);pixels[p]=red[i]*k;pixels[p+1]=green[i]*k;pixels[p+2]=blue[i]*k;pixels[p+3]=255;
+  }
+  g.putImageData(image,0,0);
+  // Sparse cotton fibres follow the surface; no flat noise or fabric photograph.
+  g.lineWidth=.30;
+  for(let i=0;i<width*height/24;i++){
+   const x=hash(i,13)*width,y=hash(i,29)*height,index=Math.floor(y)*width+Math.floor(x);if(depth[index]===-100)continue;
+   g.strokeStyle='rgba(255,255,250,.13)';g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+1.4,y-1.5,x+(hash(i,47)-.5)*3,y-3);g.stroke();
+  }
+  const expanded=document.createElement('canvas');expanded.width=1000;expanded.height=1100;const out=expanded.getContext('2d');
+  out.scale(15/40,15/40);out.fillStyle=out.createPattern(canvas,'repeat');out.fillRect(0,0,1000*40/15,1100*40/15);return expanded;
  }
  root.jerseyStudy={reference,loopLengthMm,model,applicable,texture};
  if(typeof module!=='undefined')module.exports=root.jerseyStudy;
