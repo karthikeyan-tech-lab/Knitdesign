@@ -2,7 +2,7 @@
  * Both faces project the same periodic 3D yarn centreline. No photo textures.
  */
 (function(root){
- const reference=Object.freeze({yarnCount:"30's",countSystem:'unconfirmed',gauge:24,yarnCm:30,needles:100});
+ const reference=Object.freeze({yarnCount:30,countSystem:'Ne',composition:'100% cotton',fabricCondition:'finished',gauge:24,yarnCm:30,needles:100});
  function loopLengthMm(cm,needles){if(!Number.isFinite(cm)||!Number.isFinite(needles)||cm<=0||needles<=0)throw Error('Positive yarn length and needle count required');return cm*10/needles}
  function model(length=3){
   if(!Number.isFinite(length)||length<=0)throw Error('Positive loop length required');
