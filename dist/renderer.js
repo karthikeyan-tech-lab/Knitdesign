@@ -49,6 +49,7 @@ ctx.restore();ctx.fillStyle='#e9eee6';ctx.fillRect(0,0,W,43);ctx.fillStyle='#3c5
 };
 let sheetCache={key:null};
 function makeTexture(o,back){
+ if(window.jerseyStudy?.applicable(o))return window.jerseyStudy.texture(o,back);
  // Draw one repeat, then tile it. Work scales with the design, not the swatch area.
  const c=document.createElement('canvas'),dx=15,dy=Math.round(10.5*(o.spacing/22)*2)/2;
  c.width=dx*o.pattern[0].length;c.height=Math.ceil(dy*o.pattern.length);
@@ -110,14 +111,14 @@ function makeTexture(o,back){
 }
 function zig(g,x,y,w,h){g.beginPath();g.moveTo(x,y);for(let i=0;i<w;i+=10)g.lineTo(x+i,y+(i%20?4:0));g.lineTo(x+w,y);for(let i=0;i<h;i+=10)g.lineTo(x+w-(i%20?4:0),y+i);g.lineTo(x+w,y+h);for(let i=w;i>=0;i-=10)g.lineTo(x+i,y+h-(i%20?4:0));g.lineTo(x,y+h);for(let i=h;i>=0;i-=10)g.lineTo(x+(i%20?4:0),y+i);g.closePath()}
 function texture(o,face){
- const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing]);
+ const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing,o.jerseyStudy]);
  if(sheetCache.key!==key)sheetCache={key};
  return sheetCache[face]||(sheetCache[face]=makeTexture(o,face==='back'));
 }
 window.renderFabricSheet=function(ctx,o){
  let W=ctx.canvas.width,H=ctx.canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fafaf7';ctx.fillRect(0,0,W,H);
  let sides=o.side==='both'?['front','back']:[o.side],gap=35,margin=30,panelW=(W-margin*2-gap*(sides.length-1))/sides.length;
- ctx.font='14px system-ui';ctx.fillStyle='#294b3f';ctx.fillText('FABRIC SWATCH  /  Custom repeat · visual approximation',margin,28);
+ ctx.font='14px system-ui';ctx.fillStyle='#294b3f';ctx.fillText((window.jerseyStudy?.applicable(o)?'PLAIN JERSEY STUDY  /  30’s · 24G · 3.0 mm loop length':'FABRIC SWATCH  /  Custom repeat · visual approximation'),margin,28);
  for(let i=0;i<sides.length;i++){
  let side=sides[i],x=margin+i*(panelW+gap),y=119,w=panelW,h=H-y-54,tex=texture(o,side);
  ctx.fillStyle='#294b3f';ctx.font='17px Georgia';ctx.fillText(side==='front'?'Technical face':'Technical back · approximate',x,61);
@@ -159,3 +160,4 @@ window.renderGarment=function(ctx,o){
  ctx.fillStyle='#294b3f';ctx.font='16px system-ui';ctx.fillText((longSleeve?'CREWNECK SWEATER':'KNIT T-SHIRT')+' / '+(back?'BACK':'FRONT'),35,40);
  ctx.font='13px system-ui';ctx.fillStyle='#52695e';ctx.fillText('Live stitch texture · '+o.pattern[0].length+' needles × '+o.pattern.length+' feeders',35,H-24);
 };})();
+
