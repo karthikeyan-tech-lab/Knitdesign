@@ -5,10 +5,10 @@
  const reference=Object.freeze({yarnCount:30,countSystem:'Ne',composition:'100% cotton',fabricCondition:'finished',gauge:24,wpi:30,cpi:42,waleSpacingMm:25.4/30,courseSpacingMm:25.4/42,yarnCm:30,needles:100});
  function loopLengthMm(cm,needles){if(!Number.isFinite(cm)||!Number.isFinite(needles)||cm<=0||needles<=0)throw Error('Positive yarn length and needle count required');return cm*10/needles}
  const arc=points=>points.slice(1).reduce((s,p,i)=>s+Math.hypot(...p.map((v,k)=>v-points[i][k])),0);
- function model(length=3,density=reference){
+ function model(length=3,density=reference,relief=.6){
   if(!Number.isFinite(length)||length<=0)throw Error('Positive loop length required');
   if(!Number.isFinite(density.wpi)||!Number.isFinite(density.cpi)||density.wpi<=0||density.cpi<=0)throw Error('Positive WPI and CPI required');
-  const w=25.4/density.wpi,h=25.4/density.cpi,z=.10;
+  const w=25.4/density.wpi,h=25.4/density.cpi,z=.10*(.5+Math.max(0,Math.min(1,relief))/.6*.5);
   function points(head){
    const parts=[
     [[-w/2,h*.62,-z],[w*.04,h*.62,-z],[w*.16,-head*.2,z*3.5],[w*.25,-head,-z]],
@@ -23,10 +23,10 @@
   for(let i=0;i<45;i++){const mid=(low+high)/2;if(arc(points(mid))>length)high=mid;else low=mid}
   const p=points((low+high)/2);return {points:p,walePitch:w,coursePitch:h,lengthMm:arc(p)};
  }
- function applicable(o){return !!o.jerseyStudy&&o.pattern.every(row=>row.every(a=>a==='K'))}
+ function applicable(o){return o.pattern.every(row=>row.every(a=>a==='K'))}
  const hash=(a,b)=>{const v=Math.sin(a*127.1+b*311.7)*43758.5453;return v-Math.floor(v)};
  function texture(o,back,buildPaths,suppliedModel){
-  const m=suppliedModel||model(),cols=buildPaths?Math.ceil(8/o.pattern[0].length)*o.pattern[0].length:8,rows=Math.ceil(8/o.pattern.length)*o.pattern.length,width=cols*40,px=40/m.walePitch;
+  const m=suppliedModel||model(3,reference,o.relief),cols=buildPaths?Math.ceil(8/o.pattern[0].length)*o.pattern[0].length:8,rows=Math.ceil(8/o.pattern.length)*o.pattern.length,width=cols*40,px=40/m.walePitch;
   const height=Math.round(rows*m.coursePitch*px),dy=height/rows,dx=width/cols;
   const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const g=canvas.getContext('2d');
   const image=g.createImageData(width,height),pixels=image.data,depth=new Float32Array(width*height).fill(-100),shading=new Float32Array(width*height),red=new Uint8Array(width*height),green=new Uint8Array(width*height),blue=new Uint8Array(width*height);

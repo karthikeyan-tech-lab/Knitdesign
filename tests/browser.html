@@ -17,13 +17,13 @@
   // Keep this test origin's pre-existing design intact on completion.
   localStorage.removeItem('knit-custom-v3');
   frame.src='../index.html';await new Promise(r=>frame.onload=r);doc=frame.contentDocument;win=frame.contentWindow;await ready();
-  check(el('jerseyStudy').checked&&el('tuckStudy').checked&&el('jerseyStudy').hidden&&el('tuckStudy').hidden&&el('space').disabled&&el('swatch').classList.contains('active'),'normal swatch automatically uses improved rendering without study switches');
+  check(!el('jerseyStudy')&&!el('tuckStudy')&&el('space').disabled&&el('swatch').classList.contains('active'),'normal swatch automatically uses improved rendering without study switches');
   check(doc.documentElement.scrollWidth<=win.innerWidth,'390px layout has no horizontal page overflow');
   check(el('view').getContext('2d').getImageData(400,300,1,1).data[3]===255,'fabric canvas renders');
   const meanTorso=()=>{const d=el('garmentView').getContext('2d').getImageData(450,280,180,260).data,s=[0,0,0];for(let i=0;i<d.length;i+=4)for(let c=0;c<3;c++)s[c]+=d[i+c];return s.map(v=>v/(d.length/4))};
   input('colours','two');
   for(const study of [true]){
-   el('jerseyStudy').checked=study;el('jerseyStudy').dispatchEvent(new win.Event('input',{bubbles:true}));
+
    const setFeeders=colours=>doc.querySelectorAll('#feederColors input').forEach((field,i)=>{field.value=colours[i];field.dispatchEvent(new win.Event('input',{bubbles:true}))});
    setFeeders(['#87ceeb','#ffffff']);await ready();const first=meanTorso();
    setFeeders(['#ffffff','#87ceeb']);await ready();const second=meanTorso();
@@ -31,25 +31,26 @@
   }
   const frontBoth=el('view').toDataURL();input('side','back');await ready();check(el('view').toDataURL()!==frontBoth,'front/back selection updates the image');
   input('side','both');input('zoom','1.5');await ready();check(el('view').toDataURL()!==frontBoth,'zoom updates the image');click('fit');await ready();
-  doc.querySelector('[data-brush="T"]').click();paint(0,0);await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('T')&&el('jerseyMessage').textContent.includes('paused')&&el('space').disabled&&el('tuckMessage').textContent.includes('active'),'tuck painting automatically uses improved structure');
+  doc.querySelector('[data-brush="T"]').click();paint(0,0);await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('T')&&el('jerseyMessage').textContent.includes('K/T')&&el('space').disabled&&el('tuckMessage').textContent.includes('active'),'tuck painting automatically uses improved structure');
   click('undo');await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('K')&&el('space').disabled,'Undo restores jersey and fixed density');
   doc.querySelector('[data-brush="M"]').click();paint(0,0);await ready();check(el('trackMap').textContent.includes('1, 2'),'miss painting updates cam grouping');
   await wait(()=>el('saveStatus').textContent.includes('Saved'),'autosave');
-  frame.contentWindow.location.reload();await new Promise(r=>frame.onload=r);doc=frame.contentDocument;win=frame.contentWindow;await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('M')&&el('jerseyStudy').checked,'autosave restores design and study preference after reload');
+  frame.contentWindow.location.reload();await new Promise(r=>frame.onload=r);doc=frame.contentDocument;win=frame.contentWindow;await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('M')&&!el('jerseyStudy'),'autosave restores design and study preference after reload');
   // Observe the normal Save/Export UI downloads without writing files on this test device.
   let captured;win.HTMLAnchorElement.prototype.click=function(){captured={url:this.href,name:this.download}};
   click('save');const saved=await (await fetch(captured.url)).json();check(captured.name==='custom-knit-design.json'&&saved.pattern[0][0]==='M'&&saved.jerseyStudy===true,'Save JSON contains stitches and jersey setting');
-  click('new');await ready();const transfer=new win.DataTransfer();transfer.items.add(new win.File([JSON.stringify({...saved,jerseyStudy:false,tuckStudy:false})],'roundtrip.json',{type:'application/json'}));el('load').files=transfer.files;el('load').dispatchEvent(new win.Event('change',{bubbles:true}));await wait(()=>el('editorMessage').textContent==='Design loaded.','JSON import');await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('M')&&el('jerseyStudy').checked&&el('tuckStudy').checked,'old disabled settings migrate to automatic rendering without changing stitches');
+  click('new');await ready();const transfer=new win.DataTransfer();transfer.items.add(new win.File([JSON.stringify({...saved,jerseyStudy:false,tuckStudy:false})],'roundtrip.json',{type:'application/json'}));el('load').files=transfer.files;el('load').dispatchEvent(new win.Event('change',{bubbles:true}));await wait(()=>el('editorMessage').textContent==='Design loaded.','JSON import');await ready();check(doc.querySelector('[data-r="0"][data-n="0"]').textContent.includes('M')&&!el('jerseyStudy')&&!el('tuckStudy'),'old disabled settings migrate to automatic rendering without changing stitches');
   captured=null;click('export');await wait(()=>captured,'PNG export');check(captured.name==='knit-preview.png'&&captured.url.startsWith('data:image/png'),'PNG export uses rendered fabric');
   change('preset','jersey');await ready();const oldGarment=el('garmentView').toDataURL();input('garmentSide','back');await ready();check(el('garmentView').toDataURL()!==oldGarment,'garment back view updates');
   for(const mode of ['fabric','loops','swatch']){click(mode);await ready()}check(true,'all three view modes render');
-  click('tryTuck');await ready();check(el('tuckStudy').checked&&el('tuckMessage').textContent.includes('active')&&doc.querySelector('[data-r="0"][data-n="1"]').textContent.includes('T'),'tuck example opens and enables the study');
+  click('tryTuck');await ready();check(!el('tuckStudy')&&el('tuckMessage').textContent.includes('active')&&doc.querySelector('[data-r="0"][data-n="1"]').textContent.includes('T'),'tuck example opens and enables the study');
   input('step','1');await ready();check(el('tuckFormation').textContent.includes('collects tuck yarn'),'feeder 1 explains held loop and collected yarn');
   input('step','2');await ready();check(el('tuckFormation').textContent.includes('knits through the held loop'),'feeder 2 explains clearing the held loop and tuck');
   for(const mode of ['fabric','loops','swatch']){click(mode);await ready()}check(true,'tuck fabric, yarn detail and loop structure render');
-  click('save');const tuckSaved=await (await fetch(captured.url)).json();el('tuckStudy').checked=false;el('tuckStudy').dispatchEvent(new win.Event('input',{bubbles:true}));const tuckTransfer=new win.DataTransfer();tuckTransfer.items.add(new win.File([JSON.stringify(tuckSaved)],'tuck-roundtrip.json',{type:'application/json'}));el('editorMessage').textContent='';el('load').files=tuckTransfer.files;el('load').dispatchEvent(new win.Event('change',{bubbles:true}));await wait(()=>el('editorMessage').textContent==='Design loaded.','tuck import');await ready();check(el('tuckStudy').checked&&tuckSaved.tuckStudy===true,'JSON roundtrip preserves tuck study');
+  click('save');const tuckSaved=await (await fetch(captured.url)).json();const tuckTransfer=new win.DataTransfer();tuckTransfer.items.add(new win.File([JSON.stringify(tuckSaved)],'tuck-roundtrip.json',{type:'application/json'}));el('editorMessage').textContent='';el('load').files=tuckTransfer.files;el('load').dispatchEvent(new win.Event('change',{bubbles:true}));await wait(()=>el('editorMessage').textContent==='Design loaded.','tuck import');await ready();check(!el('tuckStudy')&&tuckSaved.tuckStudy===true,'JSON roundtrip preserves tuck study');
   doc.querySelector('[data-brush="M"]').click();paint(0,1);await ready();check(el('tuckMessage').textContent.includes('paused'),'miss stitches safely fall back without changing design');click('undo');await ready();check(el('tuckMessage').textContent.includes('active'),'Undo resumes tuck study');
   change('preset','jersey');await ready();
+  change('preset','pique');await ready();check(JSON.stringify(win.eval('pattern'))===JSON.stringify([['K','K'],['K','T'],['K','K'],['T','K']]),'piqué preset matches the supplied F1–F4 order');
   click('tryPique');await ready();check(doc.querySelectorAll('#grid button').length===8&&doc.querySelector('[data-r="1"][data-n="1"]').textContent.includes('T')&&doc.querySelector('[data-r="3"][data-n="0"]').textContent.includes('T'),'measured piqué button loads the exact four-feeder repeat');
   check(el('tuckMessage').textContent.includes('35 WPI × 50 CPI')&&el('tuckMessage').textContent.includes('2.7 mm'),'piqué automatically uses its own measured reference');
   check(!el('relief').disabled,'measured piqué exposes its surface relief control');

@@ -49,7 +49,17 @@ if(highlight){for(let r=0;r<rows;r++)if(r%pattern.length===selected){let y=oy-r*
 ctx.restore();ctx.fillStyle='#e9eee6';ctx.fillRect(0,0,W,43);ctx.fillStyle='#3c5548';ctx.font='13px system-ui';ctx.fillText(structure?'LOOP STRUCTURE  /  Knit · green   Tuck · gold   Miss · purple':'FABRIC SURFACE  /  Shaded yarn · technical face',22,27);ctx.font='12px system-ui';ctx.fillText('Needle repeat  ·  '+cols+' needles × '+rows+' feeder passes  ·  '+o.zoom.toFixed(1)+'×',22,H-12);
 };
 let sheetCache={key:null};
+// Tile the smallest exact stitch/feeder-colour repeat without changing the design.
+// This avoids rasterizing 768 operations when a large editor repeats a 2×4 motif.
+function textureRepeat(o){
+ const p=o.pattern,R=p.length,N=p[0].length;
+ let rows=R,cols=N;
+ for(let size=1;size<=R;size++)if(R%size===0&&p.every((row,r)=>row.every((a,n)=>a===p[r%size][n])&&(!o.yarns||o.yarns[r]===o.yarns[r%size]))){rows=size;break}
+ for(let size=1;size<=N;size++)if(N%size===0&&p.every(row=>row.every((a,n)=>a===row[n%size]))){cols=size;break}
+ return {...o,pattern:p.slice(0,rows).map(row=>row.slice(0,cols)),yarns:o.yarns?o.yarns.slice(0,rows):null};
+}
 function makeTexture(o,back){
+ if(window.tuckStudy?.applicable(o)||window.jerseyStudy?.applicable(o))o=textureRepeat(o);
  if(window.tuckStudy?.applicable(o))return window.tuckStudy.texture(o,back);
  if(window.jerseyStudy?.applicable(o))return window.jerseyStudy.texture(o,back);
  // Draw one repeat, then tile it. Work scales with the design, not the swatch area.
@@ -117,14 +127,14 @@ function makeTexture(o,back){
 }
 function zig(g,x,y,w,h){g.beginPath();g.moveTo(x,y);for(let i=0;i<w;i+=10)g.lineTo(x+i,y+(i%20?4:0));g.lineTo(x+w,y);for(let i=0;i<h;i+=10)g.lineTo(x+w-(i%20?4:0),y+i);g.lineTo(x+w,y+h);for(let i=w;i>=0;i-=10)g.lineTo(x+i,y+h-(i%20?4:0));g.lineTo(x,y+h);for(let i=h;i>=0;i-=10)g.lineTo(x+(i%20?4:0),y+i);g.closePath()}
 function texture(o,face){
- const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing,o.jerseyStudy,o.relief,o.tuckStudy]);
+ const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing,o.relief]);
  if(sheetCache.key!==key)sheetCache={key};
  return sheetCache[face]||(sheetCache[face]=makeTexture(o,face==='back'));
 }
 window.renderFabricSheet=function(ctx,o){
  let W=ctx.canvas.width,H=ctx.canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fafaf7';ctx.fillRect(0,0,W,H);
  let sides=o.side==='both'?['front','back']:[o.side],gap=35,margin=30,panelW=(W-margin*2-gap*(sides.length-1))/sides.length;
- ctx.font='14px system-ui';ctx.fillStyle='#294b3f';ctx.fillText((window.tuckStudy?.applicable(o)?(window.tuckStudy.profileFor(o.pattern)?'SINGLE-TUCK PIQUÉ  /  35 WPI × 50 CPI · 27 cm / 100 needles':'TUCK STUDY  /  Held loop + tuck yarn · uncalibrated'):window.jerseyStudy?.applicable(o)?'PLAIN JERSEY STUDY  /  30 Ne cotton · 30 WPI × 42 CPI · 3.0 mm':'FABRIC SWATCH  /  Custom repeat · visual approximation'),margin,28);
+ ctx.font='14px system-ui';ctx.fillStyle='#294b3f';ctx.fillText((window.tuckStudy?.applicable(o)?(window.tuckStudy.profileFor(o.pattern)?'SINGLE-TUCK PIQUÉ  /  35 WPI × 50 CPI · 27 cm / 100 needles':'TUCK STRUCTURE  /  Held loop + tuck yarn · uncalibrated'):window.jerseyStudy?.applicable(o)?'PLAIN JERSEY  /  30 Ne cotton · 30 WPI × 42 CPI · 3.0 mm':'FABRIC SWATCH  /  Custom repeat · visual approximation'),margin,28);
  for(let i=0;i<sides.length;i++){
  let side=sides[i],x=margin+i*(panelW+gap),y=119,w=panelW,h=H-y-54,tex=texture(o,side);
  ctx.fillStyle='#294b3f';ctx.font='17px Georgia';ctx.fillText(side==='front'?'Technical face':'Technical back · approximate',x,61);
@@ -138,7 +148,7 @@ window.renderFabricSheet=function(ctx,o){
  let rad=sides.length===2?79:99,cx=x+w-rad*.72,cy=y+h-rad*.77,lx=Math.max(.08,Math.min(.9,o.lens?.x??.5)),ly=Math.max(.08,Math.min(.9,o.lens?.y??.5)),sample=rad*1.35;
  ctx.save();ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.shadowColor='#0005';ctx.shadowBlur=8;ctx.fillStyle='#ddd';ctx.fill();ctx.restore();ctx.save();ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.clip();ctx.drawImage(tex,lx*(tex.width-sample),ly*(tex.height-sample),sample,sample,cx-rad,cy-rad,rad*2,rad*2);ctx.restore();ctx.strokeStyle='#ffffff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
  }
- ctx.fillStyle='#607267';ctx.font='12px system-ui';ctx.fillText((window.tuckStudy?.applicable(o)?(window.tuckStudy.profileFor(o.pattern)?'Measured piqué targets · fitted mean yarn length · loop shape and finishing remain approximate':'K/T geometric study · jersey reference spacing only · not a physical prediction'):window.jerseyStudy?.applicable(o)?'Measured-spacing jersey study · estimated cotton surface · magnifier uses the same yarn geometry':'K/T/M-driven illustration · colour by feeder · magnified yarn detail'),margin,H-13);
+ ctx.fillStyle='#607267';ctx.font='12px system-ui';ctx.fillText((window.tuckStudy?.applicable(o)?(window.tuckStudy.profileFor(o.pattern)?'Measured piqué targets · fitted mean yarn length · loop shape and finishing remain approximate':'K/T fitted visualization · jersey reference spacing only · not a physical prediction'):window.jerseyStudy?.applicable(o)?'Fitted jersey visualization · estimated cotton surface · magnifier uses the same yarn geometry':'K/T/M-driven illustration · colour by feeder · magnified yarn detail'),margin,H-13);
 };
 window.renderGarment=function(ctx,o){
  const W=ctx.canvas.width,H=ctx.canvas.height,back=o.garmentSide==='back',longSleeve=o.garmentType==='sweater';

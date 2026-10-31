@@ -8,7 +8,7 @@
   for(let shift=0;shift<4;shift++)for(let swap=0;swap<2;swap++)if(p.every((row,r)=>row.every((a,n)=>a===repeat[(r+shift)%4][(n+swap)%2])))return piqueReference;
   return null;
  }
- function modelFor(p){const profile=profileFor(p);return profile?{...root.jerseyStudy.model(profile.meanLengthMm,profile),surface:'pique'}:root.jerseyStudy.model()}
+ function modelFor(p,relief=.6){const profile=profileFor(p);return profile?{...root.jerseyStudy.model(profile.meanLengthMm,profile,relief),surface:'pique'}:root.jerseyStudy.model(3,root.jerseyStudy.reference,relief)}
  const arc=points=>points.slice(1).reduce((sum,v,i)=>sum+Math.hypot(...v.map((x,k)=>x-points[i][k])),0);
  function valid(p){return Array.isArray(p)&&p.length>0&&Array.isArray(p[0])&&p[0].length>0&&p.every(row=>row.length===p[0].length&&row.every(a=>['K','T','M'].includes(a)))}
  function supports(p){return valid(p)&&p.some(row=>row.includes('T'))&&p.every(row=>!row.includes('M'))&&p[0].every((_,n)=>p.some(row=>row[n]==='K'))}
@@ -20,7 +20,7 @@
   return {r,n,action,heldFrom,nextKnit,tucks,clears:action==='K'&&heldFrom!==null?{knit:heldFrom,tucks:[...tucks]}:null};
  }
  function events(p,from=0,to=p.length){if(!valid(p))throw Error('Rectangular K/T/M repeat required');const out=[];for(let r=from;r<to;r++)for(let n=0;n<p[0].length;n++)out.push(event(p,r,n));return out}
- function applicable(o){return !!o.tuckStudy&&supports(o.pattern)}
+ function applicable(o){return supports(o.pattern)}
  function sample(parts){const out=[];for(const [j,p]of parts.entries())for(let i=j?1:0;i<=48;i++){const t=i/48,u=1-t;out.push([0,1,2].map(k=>u*u*u*p[0][k]+3*u*u*t*p[1][k]+3*u*t*t*p[2][k]+t*t*t*p[3][k]))}return out}
  function paths(o,m,layout){
   const p=o.pattern,R=p.length,N=p[0].length,w=m.walePitch,h=layout.dy/layout.px,bottom=m.points[0][1],top=Math.min(...m.points.map(v=>v[1])),profile=profileFor(p),relief=Math.max(0,Math.min(1,Number.isFinite(o.relief)?o.relief:.6))/.6,out=[];
@@ -65,15 +65,23 @@
    for(let i=0;i<34;i++){const mid=(low+high)/2;if(mean(mid)>profile.meanLengthMm)high=mid;else low=mid}
    compact=(low+high)/2;
   }
-  for(let r=-layout.rows-R*2;r<R*2;r++)for(let n=-2;n<layout.cols+2;n++){
+  for(let r=-layout.rows-(layout.visibleOnly?R+2:R*2);r<(layout.visibleOnly?3:R*2);r++)for(let n=-2;n<layout.cols+2;n++){
    const e=event(p,r,n),points=make(e,compact);
    out.push({points,row:r,radius:1,type:e.action,event:e,compact,surfaceNormals:!!profile});
   }
   return out;
  }
- function texture(o,back){return root.jerseyStudy.texture(o,back,(m,layout)=>paths(o,m,layout).map(path=>({...path,x:back?layout.cols*layout.dx:0})),modelFor(o.pattern))}
+ let pathCache={};
+ function texture(o,back){
+  const key=JSON.stringify([o.pattern,o.relief]);
+  if(pathCache.key!==key)pathCache={key,model:modelFor(o.pattern,o.relief)};
+  return root.jerseyStudy.texture(o,back,(m,layout)=>{
+   if(!pathCache.paths)pathCache.paths=paths(o,m,{...layout,visibleOnly:true});
+   return pathCache.paths.map(path=>({...path,x:back?layout.cols*layout.dx:0}));
+  },pathCache.model);
+ }
  function renderDetail(ctx,o){
-  const W=ctx.canvas.width,H=ctx.canvas.height,m=modelFor(o.pattern),structure=o.mode==='loops',cols=8,rows=8,scale=85*o.zoom;
+  const W=ctx.canvas.width,H=ctx.canvas.height,m=modelFor(o.pattern,o.relief),structure=o.mode==='loops',cols=8,rows=8,scale=85*o.zoom;
   ctx.fillStyle=structure?'#f5f8f3':'#e9ece5';ctx.fillRect(0,0,W,H);
   const list=paths(o,m,{cols,rows,dx:40,dy:40*m.coursePitch/m.walePitch,px:40/m.walePitch}),segments=[];
   const ox=(W-cols*m.walePitch*scale)/2+(o.pan?.x||0),oy=H*.72+(o.pan?.y||0);
