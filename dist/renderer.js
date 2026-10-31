@@ -49,12 +49,17 @@ ctx.restore();ctx.fillStyle='#e9eee6';ctx.fillRect(0,0,W,43);ctx.fillStyle='#3c5
 };
 let sheetCache={key:null};
 function makeTexture(o,back){
+ if(window.jerseyStudy?.applicable(o))return window.jerseyStudy.texture(o,back);
  // Draw one repeat, then tile it. Work scales with the design, not the swatch area.
  const c=document.createElement('canvas'),dx=15,dy=Math.round(10.5*(o.spacing/22)*2)/2;
  c.width=dx*o.pattern[0].length;c.height=Math.ceil(dy*o.pattern.length);
  let g=c.getContext('2d'),cols=o.pattern[0].length+2,rows=o.pattern.length+5;
  const yarn=r=>o.yarns?o.yarns[((r%o.pattern.length)+o.pattern.length)%o.pattern.length]:o.color;
- g.fillStyle=mix(yarn(0),-.58);g.fillRect(0,0,c.width,c.height);
+ // Underlay is independent of the repeat's starting feeder.
+ const activeColours=o.yarns?o.yarns.slice(0,o.pattern.length):[o.color];
+ const baseRGB=[0,1,2].map(i=>Math.round(activeColours.reduce((sum,col)=>sum+parseInt(col.slice(1+i*2,3+i*2),16),0)/activeColours.length));
+ const baseColour='#'+baseRGB.map(v=>v.toString(16).padStart(2,'0')).join('');
+ g.fillStyle=mix(baseColour,-.58);g.fillRect(0,0,c.width,c.height);
  // Record the same Bezier centreline used for the yarn body, so fine strands
  // follow the loop instead of adding a flat noise/photo overlay.
  function yarnPath(){
@@ -110,14 +115,14 @@ function makeTexture(o,back){
 }
 function zig(g,x,y,w,h){g.beginPath();g.moveTo(x,y);for(let i=0;i<w;i+=10)g.lineTo(x+i,y+(i%20?4:0));g.lineTo(x+w,y);for(let i=0;i<h;i+=10)g.lineTo(x+w-(i%20?4:0),y+i);g.lineTo(x+w,y+h);for(let i=w;i>=0;i-=10)g.lineTo(x+i,y+h-(i%20?4:0));g.lineTo(x,y+h);for(let i=h;i>=0;i-=10)g.lineTo(x+(i%20?4:0),y+i);g.closePath()}
 function texture(o,face){
- const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing]);
+ const key=JSON.stringify([o.pattern,o.yarns,o.color,o.thickness,o.spacing,o.jerseyStudy]);
  if(sheetCache.key!==key)sheetCache={key};
  return sheetCache[face]||(sheetCache[face]=makeTexture(o,face==='back'));
 }
 window.renderFabricSheet=function(ctx,o){
  let W=ctx.canvas.width,H=ctx.canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fafaf7';ctx.fillRect(0,0,W,H);
  let sides=o.side==='both'?['front','back']:[o.side],gap=35,margin=30,panelW=(W-margin*2-gap*(sides.length-1))/sides.length;
- ctx.font='14px system-ui';ctx.fillStyle='#294b3f';ctx.fillText('FABRIC SWATCH  /  Custom repeat · visual approximation',margin,28);
+ ctx.font='14px system-ui';ctx.fillStyle='#294b3f';ctx.fillText((window.jerseyStudy?.applicable(o)?'PLAIN JERSEY STUDY  /  30 Ne cotton · 30 WPI × 42 CPI · 3.0 mm':'FABRIC SWATCH  /  Custom repeat · visual approximation'),margin,28);
  for(let i=0;i<sides.length;i++){
  let side=sides[i],x=margin+i*(panelW+gap),y=119,w=panelW,h=H-y-54,tex=texture(o,side);
  ctx.fillStyle='#294b3f';ctx.font='17px Georgia';ctx.fillText(side==='front'?'Technical face':'Technical back · approximate',x,61);
@@ -131,7 +136,7 @@ window.renderFabricSheet=function(ctx,o){
  let rad=sides.length===2?79:99,cx=x+w-rad*.72,cy=y+h-rad*.77,lx=Math.max(.08,Math.min(.9,o.lens?.x??.5)),ly=Math.max(.08,Math.min(.9,o.lens?.y??.5)),sample=rad*1.35;
  ctx.save();ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.shadowColor='#0005';ctx.shadowBlur=8;ctx.fillStyle='#ddd';ctx.fill();ctx.restore();ctx.save();ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.clip();ctx.drawImage(tex,lx*(tex.width-sample),ly*(tex.height-sample),sample,sample,cx-rad,cy-rad,rad*2,rad*2);ctx.restore();ctx.strokeStyle='#ffffff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
  }
- ctx.fillStyle='#607267';ctx.font='12px system-ui';ctx.fillText('K/T/M-driven illustration · colour by feeder · magnified yarn detail',margin,H-13);
+ ctx.fillStyle='#607267';ctx.font='12px system-ui';ctx.fillText((window.jerseyStudy?.applicable(o)?'Measured-spacing jersey study · estimated cotton surface · magnifier uses the same yarn geometry':'K/T/M-driven illustration · colour by feeder · magnified yarn detail'),margin,H-13);
 };
 window.renderGarment=function(ctx,o){
  const W=ctx.canvas.width,H=ctx.canvas.height,back=o.garmentSide==='back',longSleeve=o.garmentType==='sweater';
@@ -153,9 +158,10 @@ window.renderGarment=function(ctx,o){
  for(const [x,bend]of [[395,20],[680,-22]]){let fold=ctx.createLinearGradient(x-20,0,x+20,0);fold.addColorStop(0,'#0000');fold.addColorStop(.5,'#00000012');fold.addColorStop(1,'#fff0');ctx.fillStyle=fold;ctx.beginPath();ctx.moveTo(x,220);ctx.quadraticCurveTo(x+bend,420,x+15,625);ctx.lineTo(x-25,625);ctx.quadraticCurveTo(x+bend-25,420,x-12,220);ctx.fill()}
  ctx.restore();ctx.strokeStyle='#263e3866';ctx.lineWidth=2;ctx.stroke(shape);
  // Neck opening and a ribbed collar; a higher neckline distinguishes the back.
- ctx.beginPath();ctx.moveTo(426,108);ctx.bezierCurveTo(448,back?149:221,632,back?149:221,654,108);ctx.strokeStyle=o.yarns?o.yarns[0]:o.color;ctx.lineWidth=17;ctx.stroke();ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();
+ ctx.beginPath();ctx.moveTo(426,108);ctx.bezierCurveTo(448,back?149:221,632,back?149:221,654,108);ctx.strokeStyle=o.color;ctx.lineWidth=17;ctx.stroke();ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();
  ctx.beginPath();ctx.moveTo(436,110);ctx.bezierCurveTo(458,back?137:202,622,back?137:202,644,110);ctx.lineTo(436,110);ctx.fillStyle='#dfe6df';ctx.fill();
  ctx.beginPath();ctx.moveTo(377,611);ctx.quadraticCurveTo(540,633,703,611);ctx.setLineDash([4,4]);ctx.strokeStyle='#ffffff66';ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
  ctx.fillStyle='#294b3f';ctx.font='16px system-ui';ctx.fillText((longSleeve?'CREWNECK SWEATER':'KNIT T-SHIRT')+' / '+(back?'BACK':'FRONT'),35,40);
  ctx.font='13px system-ui';ctx.fillStyle='#52695e';ctx.fillText('Live stitch texture · '+o.pattern[0].length+' needles × '+o.pattern.length+' feeders',35,H-24);
 };})();
+
