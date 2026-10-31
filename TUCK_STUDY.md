@@ -54,3 +54,6 @@ All 34 Chrome browser checks pass, including relief changes updating both fabric
 
 ## Default views
 Improved jersey and supported K/T geometry are enabled by default in the initial Fabric swatch and in the garment preview. Legacy designs without explicit study preferences inherit the enabled defaults; explicitly saved false preferences remain respected. Miss-containing repeats retain the existing fallback until float geometry is implemented.
+
+## Automatic normal rendering
+The study switches are removed from the visible interface. Swatch and garment renders automatically select improved jersey or supported K/T geometry. Legacy false study flags are migrated to enabled on import/restore; stitch patterns and yarn colours remain intact. Miss repeats still use their existing fallback. This supersedes the earlier opt-out behavior.
