@@ -7,12 +7,12 @@
  const arc=points=>points.slice(1).reduce((s,p,i)=>s+Math.hypot(...p.map((v,k)=>v-points[i][k])),0);
  function model(length=3){
   if(!Number.isFinite(length)||length<=0)throw Error('Positive loop length required');
-  const w=reference.waleSpacingMm,h=reference.courseSpacingMm,z=.075;
+  const w=reference.waleSpacingMm,h=reference.courseSpacingMm,z=.10;
   function points(head){
    const parts=[
-    [[-w/2,h*.52,-z],[w*.04,h*.64,-z],[w*.28,-head*.2,z],[w*.40,-head,z]],
-    [[w*.40,-head,z],[w*.56,-head-h*.30,z],[-w*.56,-head-h*.30,z],[-w*.40,-head,z]],
-    [[-w*.40,-head,z],[-w*.28,-head*.2,z],[-w*.04,h*.64,-z],[w/2,h*.52,-z]]
+    [[-w/2,h*.62,-z],[w*.04,h*.62,-z],[w*.16,-head*.2,z*3.5],[w*.25,-head,-z]],
+    [[w*.25,-head,-z],[w*.36,-head-h*.30,-z],[-w*.36,-head-h*.30,-z],[-w*.25,-head,-z]],
+    [[-w*.25,-head,-z],[-w*.16,-head*.2,z*3.5],[-w*.04,h*.62,-z],[w/2,h*.62,-z]]
    ],out=[];
    for(const [j,p]of parts.entries())for(let i=j?1:0;i<=48;i++){const t=i/48,u=1-t;out.push([0,1,2].map(k=>u*u*u*p[0][k]+3*u*u*t*p[1][k]+3*u*t*t*p[2][k]+t*t*t*p[3][k]))}
    return out;
@@ -33,7 +33,7 @@
   // Diameter is an appearance estimate, not a measurement derived from Ne.
   const radius=(.120+(o.thickness-7)*.006)*px;
   for(let r=-3;r<rows+3;r++)for(let n=-1;n<cols+1;n++){
-   const col=yarn(r),jitter=(hash((n+cols)%cols,(r+rows)%rows)-.5)*.30;
+   const col=yarn(r),jitter=Math.sin(r/rows*Math.PI*2)*.30;
    let distance=0;
    for(let i=1;i<m.points.length;i++){
     const a=m.points[i-1],b=m.points[i],flip=back?-1:1;
